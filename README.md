@@ -3,33 +3,31 @@
 面向《部落冲突》国服 18 级大本营的本地配兵工具。它提供配兵链接解析与生成、截图辅助识别、完整性校验、热门方案浏览和本地方案管理，可作为 Windows 桌面应用或浏览器 PWA 使用。
 
 [![License: PolyForm Noncommercial 1.0.0](https://img.shields.io/badge/license-PolyForm%20Noncommercial%201.0.0-blue)](LICENSE)
-[![Platform](https://img.shields.io/badge/platform-Windows-0078D4)](#环境要求)
-[![Node.js](https://img.shields.io/badge/Node.js-%3E%3D22-339933)](#环境要求)
+[![Platform](https://img.shields.io/badge/platform-Windows-0078D4)](#开发环境要求)
+[![Node.js](https://img.shields.io/badge/Node.js-%3E%3D22-339933)](#开发环境要求)
 
 > 本项目是公开源代码的非商业社区工具，不是开放源代码（Open Source）软件。项目与 Supercell 或国服运营方无隶属、赞助或认可关系。
 
-## 快速开始
+## 开发期间：双击打开桌面应用
 
-安装依赖后，在 PowerShell 中运行统一入口：
+当前项目仍处于开发阶段，根目录提供两个无需手工输入命令的 Windows 入口：
 
-```powershell
-npm install
-.\start.ps1
-```
+- `COCArmyTool 开发测试.lnk`：当前工作区已生成的本机推荐入口，带应用图标，直接双击。
+- `COCArmyTool-开发测试.vbs`：可随仓库移动的通用入口，直接双击。
 
-脚本会显示网页版、桌面版、测试、构建和环境检查菜单。若只想直接启动桌面开发版：
+入口会在后台隐藏终端窗口，自动启动 Tauri 桌面开发版。应用关闭后后台开发进程会一并退出；修改前端代码时仍支持热更新。首次使用需要电脑已经安装 Node.js 22+、npm 和 Rust，项目依赖缺失时入口会自动执行 `npm install`。
 
-```powershell
-npm start
-```
+启动日志位于 `artifacts/desktop-dev.stdout.log` 和 `artifacts/desktop-dev.stderr.log`。详细说明见 [Windows 开发测试入口](docs/WINDOWS_USAGE.md)。
 
-如果系统执行策略阻止脚本，可仅对本次调用放行：
+## 桌面版基本操作
 
-```powershell
-powershell -ExecutionPolicy Bypass -File .\start.ps1
-```
+1. 双击 COCArmyTool 图标进入“新建方案”。
+2. 选择导入分享链接、手工创建或截图识别。
+3. 在统一编辑器中补齐主军、法术、攻城机器、援军和英雄配置。
+4. 校验通过后复制国服链接，或保存到本机方案库。
+5. 在“方案库”中通过 JSON 导出功能定期备份本地数据。
 
-## 环境要求
+## 开发环境要求
 
 | 用途 | 必需环境 |
 | --- | --- |
@@ -37,13 +35,13 @@ powershell -ExecutionPolicy Bypass -File .\start.ps1
 | 桌面开发/构建 | 网页版环境、Rust stable、Cargo、Microsoft Edge WebView2 |
 | 端到端测试 | 上述 Node.js 环境和本机 Microsoft Edge |
 
-先运行 `npm run check` 可以快速定位缺失项。
+开发者可以运行 `npm run check` 定位缺失项。
 
-## 统一入口
+## 开发者任务入口
 
 | 入口 | 行为 |
 | --- | --- |
-| `.\start.ps1` | 打开交互菜单，适合 Windows 用户 |
+| `.\start.ps1` | 打开开发任务菜单 |
 | `.\start.ps1 desktop` | 启动 Tauri 桌面开发版 |
 | `.\start.ps1 web` | 启动 Vite 网页版 |
 | `.\start.ps1 test` | 运行单元与组件测试 |
@@ -53,7 +51,7 @@ powershell -ExecutionPolicy Bypass -File .\start.ps1
 | `npm start` | 默认启动桌面开发版 |
 | `npm run launcher` | 使用跨平台 Node.js 交互菜单 |
 
-所有入口最终调用 `package.json` 中的标准脚本，避免文档、人工命令和 CI 使用不同流程。
+这些脚本用于开发、测试和构建，不是普通用户的应用启动入口。所有入口最终调用 `package.json` 中的标准脚本，避免文档、人工命令和 CI 使用不同流程。
 
 ## 主要功能
 

@@ -180,6 +180,8 @@ cargo check --manifest-path src-tauri/Cargo.toml
 6. 创建带版本号的 Git 标签和发行说明。
 7. 二进制放 GitHub Release，不提交到 Git 历史。
 
+开发阶段的图形测试入口是根目录的 `COCArmyTool-开发测试.vbs`，它调用 `scripts/dev-launcher.ps1` 并在隐藏窗口中运行 `npm run desktop:dev`。本机可创建带图标的 `.lnk` 快捷方式；由于快捷方式包含绝对路径，不提交 Git。正式发布阶段再生成安装包和便携 EXE。
+
 ## 9. 依赖与安全
 
 - 定期审查 `npm outdated`、`npm audit` 和 `cargo outdated`（若已安装）。
