@@ -1,0 +1,59 @@
+{
+  "name": "coc-army-tool",
+  "private": true,
+  "version": "0.1.0",
+  "description": "部落冲突国服 18 本配兵链接、截图识别与本地方案管理工具",
+  "author": "Yan Yushuai",
+  "license": "PolyForm-Noncommercial-1.0.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/KrystalSask/COCArmyTool.git"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "type": "module",
+  "scripts": {
+    "start": "node scripts/start.mjs desktop",
+    "launcher": "node scripts/start.mjs",
+    "check": "node scripts/start.mjs check",
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "preview": "vite preview",
+    "desktop:dev": "tauri dev",
+    "desktop:build": "tauri build --bundles nsis",
+    "generate:data": "node scripts/generate-game-data.mjs",
+    "catalog:audit": "node scripts/audit-game-catalog.mjs",
+    "samples:import": "node scripts/import-flat-recognition-dataset.mjs",
+    "samples:audit": "node scripts/audit-recognition-samples.mjs",
+    "samples:preprocess": "python scripts/preprocess-recognition-samples.py",
+    "samples:extract-templates": "python scripts/extract-recognition-templates.py",
+    "samples:merge-templates": "node scripts/merge-recognition-templates.mjs",
+    "samples:plan": "node scripts/generate-recognition-collection-plan.mjs",
+    "samples:variants": "python scripts/generate-recognition-variants.py"
+  },
+  "dependencies": {
+    "@tauri-apps/api": "^2.11.1",
+    "dexie": "^4.0.11",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.62.1",
+    "@tauri-apps/cli": "^2.11.4",
+    "@testing-library/react": "^16.3.0",
+    "@types/node": "^26.2.0",
+    "@types/react": "^19.1.10",
+    "@types/react-dom": "^19.1.7",
+    "@vitejs/plugin-react": "^5.0.2",
+    "fake-indexeddb": "^6.2.2",
+    "jsdom": "^26.1.0",
+    "typescript": "~5.8.3",
+    "vite": "^7.1.5",
+    "vite-plugin-pwa": "^1.0.3",
+    "vitest": "^3.2.4"
+  }
+}

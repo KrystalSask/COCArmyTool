@@ -1,0 +1,1240 @@
+{
+  "source": "clashy.py static game metadata (auto-filtered)",
+  "generatedAt": "2026-08-11T01:14:48.965Z",
+  "troops": [
+    {
+      "id": 0,
+      "name": "Barbarian",
+      "kind": "troop",
+      "housingSpace": 1,
+      "townHall": 3,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 1,
+      "name": "Archer",
+      "kind": "troop",
+      "housingSpace": 1,
+      "townHall": 3,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 2,
+      "name": "Goblin",
+      "kind": "troop",
+      "housingSpace": 1,
+      "townHall": 3,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 3,
+      "name": "Giant",
+      "kind": "troop",
+      "housingSpace": 5,
+      "townHall": 3,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 4,
+      "name": "Wall Breaker",
+      "kind": "troop",
+      "housingSpace": 2,
+      "townHall": 3,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 5,
+      "name": "Balloon",
+      "kind": "troop",
+      "housingSpace": 5,
+      "townHall": 3,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 6,
+      "name": "Wizard",
+      "kind": "troop",
+      "housingSpace": 4,
+      "townHall": 3,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 7,
+      "name": "Healer",
+      "kind": "troop",
+      "housingSpace": 14,
+      "townHall": 3,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 8,
+      "name": "Dragon",
+      "kind": "troop",
+      "housingSpace": 20,
+      "townHall": 3,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 9,
+      "name": "P.E.K.K.A",
+      "kind": "troop",
+      "housingSpace": 25,
+      "townHall": 3,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 10,
+      "name": "Minion",
+      "kind": "troop",
+      "housingSpace": 2,
+      "townHall": 3,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 11,
+      "name": "Hog Rider",
+      "kind": "troop",
+      "housingSpace": 5,
+      "townHall": 3,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 12,
+      "name": "Valkyrie",
+      "kind": "troop",
+      "housingSpace": 8,
+      "townHall": 3,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 13,
+      "name": "Golem",
+      "kind": "troop",
+      "housingSpace": 30,
+      "townHall": 3,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 15,
+      "name": "Witch",
+      "kind": "troop",
+      "housingSpace": 12,
+      "townHall": 3,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 17,
+      "name": "Lava Hound",
+      "kind": "troop",
+      "housingSpace": 30,
+      "townHall": 3,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 22,
+      "name": "Bowler",
+      "kind": "troop",
+      "housingSpace": 6,
+      "townHall": 3,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 23,
+      "name": "Baby Dragon",
+      "kind": "troop",
+      "housingSpace": 10,
+      "townHall": 3,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 24,
+      "name": "Miner",
+      "kind": "troop",
+      "housingSpace": 6,
+      "townHall": 3,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 26,
+      "name": "Super Barbarian",
+      "kind": "troop",
+      "housingSpace": 5,
+      "townHall": 8,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 27,
+      "name": "Super Archer",
+      "kind": "troop",
+      "housingSpace": 12,
+      "townHall": 8,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 28,
+      "name": "Super Wall Breaker",
+      "kind": "troop",
+      "housingSpace": 8,
+      "townHall": 8,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 29,
+      "name": "Super Giant",
+      "kind": "troop",
+      "housingSpace": 10,
+      "townHall": 8,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 53,
+      "name": "Yeti",
+      "kind": "troop",
+      "housingSpace": 18,
+      "townHall": 3,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 55,
+      "name": "Sneaky Goblin",
+      "kind": "troop",
+      "housingSpace": 3,
+      "townHall": 8,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 56,
+      "name": "Super Miner",
+      "kind": "troop",
+      "housingSpace": 24,
+      "townHall": 3,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 57,
+      "name": "Rocket Balloon",
+      "kind": "troop",
+      "housingSpace": 8,
+      "townHall": 8,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 58,
+      "name": "Ice Golem",
+      "kind": "troop",
+      "housingSpace": 15,
+      "townHall": 3,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 59,
+      "name": "Electro Dragon",
+      "kind": "troop",
+      "housingSpace": 30,
+      "townHall": 3,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 63,
+      "name": "Inferno Dragon",
+      "kind": "troop",
+      "housingSpace": 15,
+      "townHall": 3,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 64,
+      "name": "Super Valkyrie",
+      "kind": "troop",
+      "housingSpace": 20,
+      "townHall": 3,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 65,
+      "name": "Dragon Rider",
+      "kind": "troop",
+      "housingSpace": 25,
+      "townHall": 3,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 66,
+      "name": "Super Witch",
+      "kind": "troop",
+      "housingSpace": 40,
+      "townHall": 3,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 76,
+      "name": "Ice Hound",
+      "kind": "troop",
+      "housingSpace": 40,
+      "townHall": 3,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 80,
+      "name": "Super Bowler",
+      "kind": "troop",
+      "housingSpace": 30,
+      "townHall": 3,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 81,
+      "name": "Super Dragon",
+      "kind": "troop",
+      "housingSpace": 40,
+      "townHall": 8,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 82,
+      "name": "Headhunter",
+      "kind": "troop",
+      "housingSpace": 6,
+      "townHall": 3,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 83,
+      "name": "Super Wizard",
+      "kind": "troop",
+      "housingSpace": 10,
+      "townHall": 8,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 84,
+      "name": "Super Minion",
+      "kind": "troop",
+      "housingSpace": 12,
+      "townHall": 8,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 95,
+      "name": "Electro Titan",
+      "kind": "troop",
+      "housingSpace": 32,
+      "townHall": 3,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 97,
+      "name": "Apprentice Warden",
+      "kind": "troop",
+      "housingSpace": 20,
+      "townHall": 3,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 98,
+      "name": "Super Hog Rider",
+      "kind": "troop",
+      "housingSpace": 12,
+      "townHall": 8,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 109,
+      "name": "Ruin Witch",
+      "kind": "troop",
+      "housingSpace": 26,
+      "townHall": 3,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 110,
+      "name": "Root Rider",
+      "kind": "troop",
+      "housingSpace": 20,
+      "townHall": 3,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 123,
+      "name": "Druid",
+      "kind": "troop",
+      "housingSpace": 16,
+      "townHall": 3,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 132,
+      "name": "Thrower",
+      "kind": "troop",
+      "housingSpace": 16,
+      "townHall": 3,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 147,
+      "name": "Super Yeti",
+      "kind": "troop",
+      "housingSpace": 35,
+      "townHall": 3,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 150,
+      "name": "Furnace",
+      "kind": "troop",
+      "housingSpace": 18,
+      "townHall": 3,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 177,
+      "name": "Meteor Golem",
+      "kind": "troop",
+      "housingSpace": 40,
+      "townHall": 17,
+      "hero": null,
+      "rarity": null
+    }
+  ],
+  "siegeMachines": [
+    {
+      "id": 51,
+      "name": "Wall Wrecker",
+      "kind": "siege",
+      "housingSpace": 1,
+      "townHall": 11,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 52,
+      "name": "Battle Blimp",
+      "kind": "siege",
+      "housingSpace": 1,
+      "townHall": 11,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 62,
+      "name": "Stone Slammer",
+      "kind": "siege",
+      "housingSpace": 1,
+      "townHall": 11,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 75,
+      "name": "Siege Barracks",
+      "kind": "siege",
+      "housingSpace": 1,
+      "townHall": 11,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 87,
+      "name": "Log Launcher",
+      "kind": "siege",
+      "housingSpace": 1,
+      "townHall": 11,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 91,
+      "name": "Flame Flinger",
+      "kind": "siege",
+      "housingSpace": 1,
+      "townHall": 11,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 92,
+      "name": "Battle Drill",
+      "kind": "siege",
+      "housingSpace": 1,
+      "townHall": 15,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 135,
+      "name": "Troop Launcher",
+      "kind": "siege",
+      "housingSpace": 1,
+      "townHall": 15,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 188,
+      "name": "Sky Wagon",
+      "kind": "siege",
+      "housingSpace": 1,
+      "townHall": 16,
+      "hero": null,
+      "rarity": null
+    }
+  ],
+  "spells": [
+    {
+      "id": 0,
+      "name": "Lightning Spell",
+      "kind": "spell",
+      "housingSpace": 1,
+      "townHall": 3,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 1,
+      "name": "Healing Spell",
+      "kind": "spell",
+      "housingSpace": 2,
+      "townHall": 4,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 2,
+      "name": "Rage Spell",
+      "kind": "spell",
+      "housingSpace": 2,
+      "townHall": 5,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 3,
+      "name": "Jump Spell",
+      "kind": "spell",
+      "housingSpace": 2,
+      "townHall": 6,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 5,
+      "name": "Freeze Spell",
+      "kind": "spell",
+      "housingSpace": 1,
+      "townHall": 9,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 9,
+      "name": "Poison Spell",
+      "kind": "spell",
+      "housingSpace": 1,
+      "townHall": 3,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 10,
+      "name": "Earthquake Spell",
+      "kind": "spell",
+      "housingSpace": 1,
+      "townHall": 3,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 11,
+      "name": "Haste Spell",
+      "kind": "spell",
+      "housingSpace": 1,
+      "townHall": 3,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 16,
+      "name": "Clone Spell",
+      "kind": "spell",
+      "housingSpace": 3,
+      "townHall": 3,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 17,
+      "name": "Skeleton Spell",
+      "kind": "spell",
+      "housingSpace": 1,
+      "townHall": 3,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 28,
+      "name": "Bat Spell",
+      "kind": "spell",
+      "housingSpace": 1,
+      "townHall": 3,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 35,
+      "name": "Invisibility Spell",
+      "kind": "spell",
+      "housingSpace": 1,
+      "townHall": 3,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 53,
+      "name": "Recall Spell",
+      "kind": "spell",
+      "housingSpace": 2,
+      "townHall": 3,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 70,
+      "name": "Overgrowth Spell",
+      "kind": "spell",
+      "housingSpace": 2,
+      "townHall": 3,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 98,
+      "name": "Revive Spell",
+      "kind": "spell",
+      "housingSpace": 2,
+      "townHall": 3,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 109,
+      "name": "Ice Block Spell",
+      "kind": "spell",
+      "housingSpace": 1,
+      "townHall": 3,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 120,
+      "name": "Totem Spell",
+      "kind": "spell",
+      "housingSpace": 1,
+      "townHall": 3,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 123,
+      "name": "Angry Spell",
+      "kind": "spell",
+      "housingSpace": 1,
+      "townHall": 15,
+      "hero": null,
+      "rarity": null
+    }
+  ],
+  "heroes": [
+    {
+      "id": 0,
+      "name": "Barbarian King",
+      "kind": "hero",
+      "housingSpace": 0,
+      "townHall": 4,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 1,
+      "name": "Archer Queen",
+      "kind": "hero",
+      "housingSpace": 0,
+      "townHall": 8,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 2,
+      "name": "Grand Warden",
+      "kind": "hero",
+      "housingSpace": 0,
+      "townHall": 11,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 4,
+      "name": "Royal Champion",
+      "kind": "hero",
+      "housingSpace": 0,
+      "townHall": 13,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 6,
+      "name": "Minion Prince",
+      "kind": "hero",
+      "housingSpace": 0,
+      "townHall": 9,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 7,
+      "name": "Dragon Duke",
+      "kind": "hero",
+      "housingSpace": 0,
+      "townHall": 15,
+      "hero": null,
+      "rarity": null
+    }
+  ],
+  "pets": [
+    {
+      "id": 0,
+      "name": "L.A.S.S.I",
+      "kind": "pet",
+      "housingSpace": 0,
+      "townHall": 14,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 1,
+      "name": "Mighty Yak",
+      "kind": "pet",
+      "housingSpace": 0,
+      "townHall": 14,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 2,
+      "name": "Electro Owl",
+      "kind": "pet",
+      "housingSpace": 0,
+      "townHall": 14,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 3,
+      "name": "Unicorn",
+      "kind": "pet",
+      "housingSpace": 0,
+      "townHall": 14,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 4,
+      "name": "Phoenix",
+      "kind": "pet",
+      "housingSpace": 0,
+      "townHall": 15,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 7,
+      "name": "Poison Lizard",
+      "kind": "pet",
+      "housingSpace": 0,
+      "townHall": 15,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 8,
+      "name": "Diggy",
+      "kind": "pet",
+      "housingSpace": 0,
+      "townHall": 15,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 9,
+      "name": "Frosty",
+      "kind": "pet",
+      "housingSpace": 0,
+      "townHall": 15,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 10,
+      "name": "Spirit Fox",
+      "kind": "pet",
+      "housingSpace": 0,
+      "townHall": 16,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 11,
+      "name": "Angry Jelly",
+      "kind": "pet",
+      "housingSpace": 0,
+      "townHall": 16,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 16,
+      "name": "Sneezy",
+      "kind": "pet",
+      "housingSpace": 0,
+      "townHall": 17,
+      "hero": null,
+      "rarity": null
+    },
+    {
+      "id": 17,
+      "name": "Greedy Raven",
+      "kind": "pet",
+      "housingSpace": 0,
+      "townHall": 18,
+      "hero": null,
+      "rarity": null
+    }
+  ],
+  "equipment": [
+    {
+      "id": 0,
+      "name": "Barbarian Puppet",
+      "kind": "equipment",
+      "housingSpace": 0,
+      "townHall": 8,
+      "hero": "Barbarian King",
+      "rarity": "Common"
+    },
+    {
+      "id": 1,
+      "name": "Rage Vial",
+      "kind": "equipment",
+      "housingSpace": 0,
+      "townHall": 8,
+      "hero": "Barbarian King",
+      "rarity": "Common"
+    },
+    {
+      "id": 2,
+      "name": "Archer Puppet",
+      "kind": "equipment",
+      "housingSpace": 0,
+      "townHall": 8,
+      "hero": "Archer Queen",
+      "rarity": "Common"
+    },
+    {
+      "id": 3,
+      "name": "Invisibility Vial",
+      "kind": "equipment",
+      "housingSpace": 0,
+      "townHall": 8,
+      "hero": "Archer Queen",
+      "rarity": "Common"
+    },
+    {
+      "id": 4,
+      "name": "Eternal Tome",
+      "kind": "equipment",
+      "housingSpace": 0,
+      "townHall": 8,
+      "hero": "Grand Warden",
+      "rarity": "Common"
+    },
+    {
+      "id": 5,
+      "name": "Life Gem",
+      "kind": "equipment",
+      "housingSpace": 0,
+      "townHall": 8,
+      "hero": "Grand Warden",
+      "rarity": "Common"
+    },
+    {
+      "id": 6,
+      "name": "Seeking Shield",
+      "kind": "equipment",
+      "housingSpace": 0,
+      "townHall": 8,
+      "hero": "Royal Champion",
+      "rarity": "Common"
+    },
+    {
+      "id": 7,
+      "name": "Royal Gem",
+      "kind": "equipment",
+      "housingSpace": 0,
+      "townHall": 8,
+      "hero": "Royal Champion",
+      "rarity": "Common"
+    },
+    {
+      "id": 8,
+      "name": "Earthquake Boots",
+      "kind": "equipment",
+      "housingSpace": 0,
+      "townHall": 8,
+      "hero": "Barbarian King",
+      "rarity": "Common"
+    },
+    {
+      "id": 9,
+      "name": "Hog Rider Puppet",
+      "kind": "equipment",
+      "housingSpace": 0,
+      "townHall": 14,
+      "hero": "Royal Champion",
+      "rarity": "Common"
+    },
+    {
+      "id": 10,
+      "name": "Giant Gauntlet",
+      "kind": "equipment",
+      "housingSpace": 0,
+      "townHall": 8,
+      "hero": "Barbarian King",
+      "rarity": "Epic"
+    },
+    {
+      "id": 11,
+      "name": "Vampstache",
+      "kind": "equipment",
+      "housingSpace": 0,
+      "townHall": 10,
+      "hero": "Barbarian King",
+      "rarity": "Common"
+    },
+    {
+      "id": 12,
+      "name": "Haste Vial",
+      "kind": "equipment",
+      "housingSpace": 0,
+      "townHall": 15,
+      "hero": "Royal Champion",
+      "rarity": "Common"
+    },
+    {
+      "id": 13,
+      "name": "Rocket Spear",
+      "kind": "equipment",
+      "housingSpace": 0,
+      "townHall": 8,
+      "hero": "Royal Champion",
+      "rarity": "Epic"
+    },
+    {
+      "id": 14,
+      "name": "Spiky Ball",
+      "kind": "equipment",
+      "housingSpace": 0,
+      "townHall": 8,
+      "hero": "Barbarian King",
+      "rarity": "Epic"
+    },
+    {
+      "id": 15,
+      "name": "Frozen Arrow",
+      "kind": "equipment",
+      "housingSpace": 0,
+      "townHall": 8,
+      "hero": "Archer Queen",
+      "rarity": "Epic"
+    },
+    {
+      "id": 16,
+      "name": "Monolith Arrow",
+      "kind": "equipment",
+      "housingSpace": 0,
+      "townHall": 8,
+      "hero": "Archer Queen",
+      "rarity": "Epic"
+    },
+    {
+      "id": 17,
+      "name": "Giant Arrow",
+      "kind": "equipment",
+      "housingSpace": 0,
+      "townHall": 9,
+      "hero": "Archer Queen",
+      "rarity": "Common"
+    },
+    {
+      "id": 19,
+      "name": "Heroic Torch",
+      "kind": "equipment",
+      "housingSpace": 0,
+      "townHall": 8,
+      "hero": "Grand Warden",
+      "rarity": "Epic"
+    },
+    {
+      "id": 20,
+      "name": "Healer Puppet",
+      "kind": "equipment",
+      "housingSpace": 0,
+      "townHall": 12,
+      "hero": "Archer Queen",
+      "rarity": "Common"
+    },
+    {
+      "id": 22,
+      "name": "Fireball",
+      "kind": "equipment",
+      "housingSpace": 0,
+      "townHall": 8,
+      "hero": "Grand Warden",
+      "rarity": "Epic"
+    },
+    {
+      "id": 24,
+      "name": "Rage Gem",
+      "kind": "equipment",
+      "housingSpace": 0,
+      "townHall": 11,
+      "hero": "Grand Warden",
+      "rarity": "Common"
+    },
+    {
+      "id": 32,
+      "name": "Snake Bracelet",
+      "kind": "equipment",
+      "housingSpace": 0,
+      "townHall": 8,
+      "hero": "Barbarian King",
+      "rarity": "Epic"
+    },
+    {
+      "id": 34,
+      "name": "Healing Tome",
+      "kind": "equipment",
+      "housingSpace": 0,
+      "townHall": 13,
+      "hero": "Grand Warden",
+      "rarity": "Common"
+    },
+    {
+      "id": 35,
+      "name": "Dark Crown",
+      "kind": "equipment",
+      "housingSpace": 0,
+      "townHall": 8,
+      "hero": "Minion Prince",
+      "rarity": "Epic"
+    },
+    {
+      "id": 39,
+      "name": "Magic Mirror",
+      "kind": "equipment",
+      "housingSpace": 0,
+      "townHall": 8,
+      "hero": "Archer Queen",
+      "rarity": "Epic"
+    },
+    {
+      "id": 40,
+      "name": "Electro Boots",
+      "kind": "equipment",
+      "housingSpace": 0,
+      "townHall": 8,
+      "hero": "Royal Champion",
+      "rarity": "Epic"
+    },
+    {
+      "id": 41,
+      "name": "Lavaloon Puppet",
+      "kind": "equipment",
+      "housingSpace": 0,
+      "townHall": 8,
+      "hero": "Grand Warden",
+      "rarity": "Epic"
+    },
+    {
+      "id": 42,
+      "name": "Henchmen Puppet",
+      "kind": "equipment",
+      "housingSpace": 0,
+      "townHall": 8,
+      "hero": "Minion Prince",
+      "rarity": "Common"
+    },
+    {
+      "id": 43,
+      "name": "Dark Orb",
+      "kind": "equipment",
+      "housingSpace": 0,
+      "townHall": 8,
+      "hero": "Minion Prince",
+      "rarity": "Common"
+    },
+    {
+      "id": 44,
+      "name": "Metal Pants",
+      "kind": "equipment",
+      "housingSpace": 0,
+      "townHall": 10,
+      "hero": "Minion Prince",
+      "rarity": "Common"
+    },
+    {
+      "id": 47,
+      "name": "Noble Iron",
+      "kind": "equipment",
+      "housingSpace": 0,
+      "townHall": 12,
+      "hero": "Minion Prince",
+      "rarity": "Common"
+    },
+    {
+      "id": 48,
+      "name": "Action Figure",
+      "kind": "equipment",
+      "housingSpace": 0,
+      "townHall": 8,
+      "hero": "Archer Queen",
+      "rarity": "Epic"
+    },
+    {
+      "id": 49,
+      "name": "Meteor Staff",
+      "kind": "equipment",
+      "housingSpace": 0,
+      "townHall": 8,
+      "hero": "Minion Prince",
+      "rarity": "Epic"
+    },
+    {
+      "id": 50,
+      "name": "Frost Flake",
+      "kind": "equipment",
+      "housingSpace": 0,
+      "townHall": 8,
+      "hero": "Royal Champion",
+      "rarity": "Epic"
+    },
+    {
+      "id": 51,
+      "name": "Stick Horse",
+      "kind": "equipment",
+      "housingSpace": 0,
+      "townHall": 8,
+      "hero": "Barbarian King",
+      "rarity": "Epic"
+    },
+    {
+      "id": 52,
+      "name": "Fire Heart",
+      "kind": "equipment",
+      "housingSpace": 0,
+      "townHall": 8,
+      "hero": "Dragon Duke",
+      "rarity": "Common"
+    },
+    {
+      "id": 53,
+      "name": "Rocket Backpack",
+      "kind": "equipment",
+      "housingSpace": 0,
+      "townHall": 8,
+      "hero": "Dragon Duke",
+      "rarity": "Epic"
+    },
+    {
+      "id": 56,
+      "name": "Stun Blaster",
+      "kind": "equipment",
+      "housingSpace": 0,
+      "townHall": 16,
+      "hero": "Dragon Duke",
+      "rarity": "Common"
+    },
+    {
+      "id": 57,
+      "name": "Flame Blower",
+      "kind": "equipment",
+      "housingSpace": 0,
+      "townHall": 8,
+      "hero": "Dragon Duke",
+      "rarity": "Common"
+    },
+    {
+      "id": 59,
+      "name": "Electro Fangs",
+      "kind": "equipment",
+      "housingSpace": 0,
+      "townHall": 17,
+      "hero": "Dragon Duke",
+      "rarity": "Common"
+    },
+    {
+      "id": 60,
+      "name": "Revenge Deck",
+      "kind": "equipment",
+      "housingSpace": 0,
+      "townHall": 8,
+      "hero": "Dragon Duke",
+      "rarity": "Epic"
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "description": "Screenshot-observed equipment after the game replaced equipment unavailable on the capture account. These values override only equipment labels; the army link remains the planned configuration.",
+  "samples": {
+    "003": { "7": [57, 52] },
+    "004": { "7": [57, 52] },
+    "007": { "1": [2, 3] },
+    "008": { "1": [2, 3] }
+  }
+}

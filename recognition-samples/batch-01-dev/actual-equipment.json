@@ -1,0 +1,7 @@
+{
+  "schemaVersion": 1,
+  "description": "Screenshot-observed equipment after the game replaced unavailable Monolith Arrow in the second slot with the Archer Queen's second default equipment.",
+  "samples": {
+    "008": { "1": [48, 3] }
+  }
+}

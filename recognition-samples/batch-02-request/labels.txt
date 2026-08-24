@@ -1,0 +1,9 @@
+id	link	layout	variant	device
+001	https://link.clashofclans.com/cn?action=CopyArmy&army=h0p0e0_1-1p1e2_15-2p2e4_41-4p3e7_9i1x9-1x13-1x51-1x52d4x123u1x9-1x12-1x13-1x15-1x26-1x27-10x8-3x110-1x51-1x52-1x92s1x0-1x5-1x10-1x35-1x53-2x123-1x16	attack	original	iphone-17
+002	https://link.clashofclans.com/cn?action=CopyArmy&army=h0p0e0_1-1p1e2_15-2p2e4_41-4p3e7_9i1x9-1x13-1x51-1x52d4x123u1x9-1x12-1x13-1x15-1x26-1x27-10x8-3x110-1x51-1x52-1x92s1x0-1x5-1x10-1x35-1x53-2x123-1x16	attack	original	ipad-pro-2024-11
+003	https://link.clashofclans.com/cn?action=CopyArmy&army=h0p4e11_10-1p7e20_3-6p8e42_47-7p9e60_52i5x29-1x3-1x92-1x51d1x53-2x123u1x22-1x29-1x55-5x8-7x132-17x0-4x109-1x62-1x75-1x87s1x1-1x2-1x5-1x11-1x17-1x120-3x123	attack	original	iphone-17
+004	https://link.clashofclans.com/cn?action=CopyArmy&army=h0p4e11_10-1p7e20_3-6p8e42_47-7p9e60_52i5x29-1x3-1x92-1x51d1x53-2x123u1x22-1x29-1x55-5x8-7x132-17x0-4x109-1x62-1x75-1x87s1x1-1x2-1x5-1x11-1x17-1x120-3x123	attack	original	ipad-pro-2024-11
+005	https://link.clashofclans.com/cn?action=CopyArmy&army=h4p10e12_40-0p11e8_32-2m1p16e5_22-7p17e56_57i1x66-3x3-1x92-1x52d2x123-1x53u1x56-1x66-7x110-5x150-2x123-13x4-1x91-1x135-1x188s7x123-2x2	attack	original	iphone-17
+006	https://link.clashofclans.com/cn?action=CopyArmy&army=h4p10e12_40-0p11e8_32-2m1p16e5_22-7p17e56_57i1x66-3x3-1x92-1x52d2x123-1x53u1x56-1x66-7x110-5x150-2x123-13x4-1x91-1x135-1x188s7x123-2x2	attack	original	ipad-pro-2024-11
+007	https://link.clashofclans.com/cn?action=CopyArmy&army=h4p0e50_6-1p1e16_3-6p2e35_44-2p7e19_24i1x56-1x22-1x9-1x51-1x92d2x123-1x70u1x83-1x98-8x109-5x132-3x7-1x51-1x52-1x92s1x53-1x123-1x70-1x98-1x16-1x5	attack	original	iphone-17
+008	https://link.clashofclans.com/cn?action=CopyArmy&army=h4p0e50_6-1p1e16_3-6p2e35_44-2p7e19_24i1x56-1x22-1x9-1x51-1x92d2x123-1x70u1x83-1x98-8x109-5x132-3x7-1x51-1x52-1x92s1x53-1x123-1x70-1x98-1x16-1x5	attack	original	ipad-pro-2024-11

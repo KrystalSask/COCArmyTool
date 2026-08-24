@@ -1,0 +1,21 @@
+{
+  "batch": "batch-01-dev",
+  "layout": "edit",
+  "variant": "original",
+  "profiles": [
+    {
+      "device": "iphone-17",
+      "ids": [1, 7],
+      "width": 2622,
+      "height": 1206,
+      "panel": { "left": 194, "top": 36, "right": 2363, "bottom": 1139 }
+    },
+    {
+      "device": "ipad-pro-2024-11",
+      "ids": [8, 13],
+      "width": 2420,
+      "height": 1668,
+      "panel": { "left": 131, "top": 254, "right": 2292, "bottom": 1387 }
+    }
+  ]
+}
