@@ -2,6 +2,7 @@ import templates from '../data/recognitionTemplates.generated.json'
 import type { RecognitionRegionKind } from './types'
 import type { DetectedCardSlot } from './cardDetector'
 import type { NormalizedRect } from './types'
+import { officialSpellObservations } from './officialSpellTemplates'
 
 export interface VisualFeatureObservation {
   dhash: string
@@ -13,7 +14,7 @@ interface TemplateFeatureObservation extends VisualFeatureObservation {
   id: number
 }
 
-const observations = templates.observations as TemplateFeatureObservation[]
+const observations = [...templates.observations as TemplateFeatureObservation[], ...officialSpellObservations]
 
 const allowedKinds = (region: Exclude<RecognitionRegionKind, 'heroes'>, spellFrame = false) => region === 'mainTroops'
   ? new Set(['troop'])
@@ -112,6 +113,19 @@ const hasSpellFrame = (canvas: HTMLCanvasElement) => {
   return median(hues) >= 132
 }
 
+const electricBlueRatio = (canvas: HTMLCanvasElement) => {
+  const data = canvas.getContext('2d', { willReadFrequently: true })?.getImageData(0, 0, 64, 64).data
+  if (!data) return 0
+  let matched = 0
+  for (let offset = 0; offset < data.length; offset += 4) {
+    const red = data[offset]
+    const green = data[offset + 1]
+    const blue = data[offset + 2]
+    if (blue > 150 && green > 75 && red < 90 && blue > green * 1.15) matched += 1
+  }
+  return matched / 4096
+}
+
 const hammingDistance = (left: bigint, right: bigint) => {
   let value = left ^ right
   let count = 0
@@ -141,11 +155,13 @@ export const rankCardTemplates = (source: HTMLCanvasElement, slot: DetectedCardS
   if (!feature) return []
   const { hash, histogram, normalized } = feature
   const kinds = allowedKinds(region, region === 'castleArmy' && hasSpellFrame(normalized))
+  const lightningEvidence = region === 'mainSpells' ? electricBlueRatio(normalized) : 0
   const best = new Map<string, { id: number, kind: 'troop' | 'siege' | 'spell', distance: number }>()
   for (const observation of observations) {
     if (!kinds.has(observation.kind)) continue
     const key = `${observation.kind}:${observation.id}`
     const distance = featureDistance(hash, histogram, observation)
+      - (observation.kind === 'spell' && observation.id === 0 && lightningEvidence >= .20 ? .15 : 0)
     const previous = best.get(key)
     if (!previous || distance < previous.distance) best.set(key, { id: observation.id, kind: observation.kind, distance })
   }

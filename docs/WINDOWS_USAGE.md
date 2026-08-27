@@ -1,55 +1,51 @@
-# COCArmyTool Windows 开发测试入口
+# COCArmyTool Windows 开发启动
 
-本入口用于项目开发阶段：双击后直接打开 Tauri 桌面界面，不需要每次手工打开终端或输入命令，同时保留 Vite 热更新能力。它不是安装包，也不会修改 Windows 的程序安装列表。
+本文面向开发者，说明在 Windows 上如何启动桌面开发版、热更新和排障。最终用户请使用便携版发布包（见 [便携版发布](PORTABLE_RELEASE.md)），不需要本页的任何工具。
 
-## 使用方式
+## 开发版启动方式
 
-在项目根目录双击以下任一入口：
+开发版需要 Node.js 22+、npm 和 Rust stable。初始化并检查环境：
 
-- `COCArmyTool 开发测试.lnk`：当前电脑上的推荐快捷方式，显示项目图标。
-- `COCArmyTool-开发测试.vbs`：仓库内的可移动入口；重新克隆或更换目录后仍可使用。
+```powershell
+npm install
+npm run check
+```
 
-启动时会短暂显示“正在启动”提示，随后出现 COCArmyTool 桌面窗口。底层开发命令窗口保持隐藏。
+启动 Tauri 桌面开发版（带 Vite 热更新）：
 
-## 启动器会做什么
+```powershell
+npm run desktop:dev
+```
 
-1. 自动定位项目根目录。
-2. 检查 Node.js、npm、Rust 和 Cargo。
-3. 如果缺少 `node_modules`，自动运行 `npm install`。
-4. 在隐藏窗口中运行 `npm run desktop:dev`。
-5. 启动 Vite 开发服务和 Tauri 桌面窗口。
-6. 将标准输出和错误日志保存到 `artifacts/`。
+或使用统一入口：
 
-关闭桌面窗口后，Tauri 开发命令会正常退出。若应用已经运行，再次双击只会提示已有实例，不会重复占用开发端口。
+```powershell
+.\start.ps1 desktop
+.\start.ps1   # 打开任务菜单
+```
+
+`start.ps1` 只负责定位项目根目录并调用 `scripts/start.mjs`；实际任务始终来自 `package.json`。
 
 ## 热更新
 
 - 修改 React、TypeScript 或 CSS 后，桌面窗口会自动刷新。
 - 修改 Rust/Tauri 代码后，Tauri 会重新编译并重启桌面进程。
-- 不需要重新制作 EXE 或安装包。
+- 不需要重新打包 EXE 或 ZIP。
 
 ## 首次环境要求
 
 - Windows 10/11。
 - Node.js 22 或更高版本和 npm。
 - Rust stable 与 Cargo。
-- Microsoft Edge WebView2 Runtime。
-
-当前开发电脑已经具备这些环境。其他电脑首次使用时需要先安装 Node.js 和 Rust；依赖包由入口自动安装。
+- Microsoft Edge WebView2 Runtime（仅最终用户的便携版强制要求）。
 
 ## 日志和故障排查
 
-```text
-artifacts/desktop-dev.stdout.log
-artifacts/desktop-dev.stderr.log
-```
+开发版在前台运行，错误直接显示在终端。常见问题：
 
-如果双击后没有出现窗口：
+1. 等待首次 Rust 编译完成（首次可能需要几分钟）。
+2. 确认没有另一个开发实例占用端口 1420。
+3. 运行 `npm run check` 检查开发环境。
+4. 查看 [常见故障](MAINTENANCE.md#10-常见故障) 一节。
 
-1. 等待首次 Rust 编译完成。
-2. 查看上述错误日志。
-3. 确认没有另一个 COCArmyTool 实例占用端口。
-4. 运行 `npm run check` 检查开发环境。
-5. 必要时在终端运行 `npm run desktop:dev` 查看实时错误。
-
-`COCArmyTool 开发测试.lnk` 包含当前电脑的绝对路径，因此不提交 Git；`COCArmyTool-开发测试.vbs` 和 `scripts/dev-launcher.ps1` 会提交并可在其他工作区重新生成快捷方式。
+历史说明：早期根目录提供过“开发测试”双击入口（`.lnk`/`.vbs` 调用 `scripts/dev-launcher.ps1`）。该入口把开发版伪装成用户应用，已在 v0.2.0 移除；开发者统一使用上面的 CLI 入口，最终用户使用便携 ZIP。

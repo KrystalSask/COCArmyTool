@@ -36,7 +36,8 @@ npm run check
 | 单元测试 | `npm test` | Vitest 全量运行 |
 | 端到端测试 | `npm run test:e2e` | Playwright + 本机 Edge |
 | 网页构建 | `npm run build` | `dist/` |
-| 桌面安装包 | `npm run desktop:build` | `src-tauri/target/release/bundle/` |
+| 便携版发布（正式产物） | `npm run release:portable` | `release/COCArmyTool-v0.2.0-windows-x64-portable.zip` |
+| NSIS 安装包（备用） | `npm run desktop:build` | `src-tauri/target/release/bundle/` |
 | 游戏目录审计 | `npm run catalog:audit` | 名称、类别、图标和活动单位检查 |
 | 样本审计 | `npm run samples:audit -- <批次>` | 批次 `reports/` |
 
@@ -166,7 +167,7 @@ cargo check --manifest-path src-tauri/Cargo.toml
 项目版本必须同时更新：
 
 - `package.json` 与 `package-lock.json`。
-- `src-tauri/tauri.conf.json`。
+- `src-tauri/tauri.conf.json`（`version` 与稳定标识 `identifier: com.cocarmytool.desktop` 同时在此维护，标识不可变，否则旧 WebView/IndexedDB 数据将不可见）。
 - `src-tauri/Cargo.toml` 与 `Cargo.lock`（若 Cargo 元数据变化）。
 - 应用页脚或其他硬编码版本显示。
 
@@ -175,12 +176,12 @@ cargo check --manifest-path src-tauri/Cargo.toml
 1. 工作区只包含预期改动。
 2. README、项目说明、维护文档和第三方声明仍准确。
 3. 数据集无重复、无隐私信息、无生成产物。
-4. 运行完整验证矩阵。
-5. 构建 Windows 安装包并在干净环境做一次启动烟雾测试。
+4. 运行完整验证矩阵（`npm test`、`npm run test:e2e`、`npm run build`、`cargo check`）。
+5. 运行 `npm run release:portable` 构建便携 ZIP，并在仓库外干净目录解压做一次启动烟雾测试（见 [便携版发布](PORTABLE_RELEASE.md)）。
 6. 创建带版本号的 Git 标签和发行说明。
 7. 二进制放 GitHub Release，不提交到 Git 历史。
 
-开发阶段的图形测试入口是根目录的 `COCArmyTool-开发测试.vbs`，它调用 `scripts/dev-launcher.ps1` 并在隐藏窗口中运行 `npm run desktop:dev`。本机可创建带图标的 `.lnk` 快捷方式；由于快捷方式包含绝对路径，不提交 Git。正式发布阶段再生成安装包和便携 EXE。
+对外分发产物是便携 ZIP（`release/COCArmyTool-v<版本>-windows-x64-portable.zip`），包含 `COCArmyTool.exe` 与简体中文 `使用说明.txt`；免安装、无安装器，依赖系统 WebView2 运行时，数据保存在 `%LOCALAPPDATA%\com.cocarmytool.desktop`（WebView2 用户数据目录，按不变的应用标识隔离）。NSIS 安装包（`npm run desktop:build`）保留为内部试用选项，不是对外发布产物。构建流程与产物边界见 [便携版发布](PORTABLE_RELEASE.md)。
 
 ## 9. 依赖与安全
 
@@ -210,4 +211,4 @@ powershell -ExecutionPolicy Bypass -File .\start.ps1
 
 确认启动来源和端口是否变化。IndexedDB 按来源隔离；桌面 WebView、Vite 默认端口和预览端口的数据不会自动共享。使用方案库 JSON 备份迁移。
 
-最后核对：2026-08-24。
+最后核对：2026-08-27。

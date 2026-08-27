@@ -6,10 +6,11 @@ test-results/
 playwright-report/
 artifacts/
 src-tauri/target/
-COC 配兵助手-便携测试版/
-/COCArmyTool 开发测试.lnk
+release/
 *.log
 *.tsbuildinfo
+/yolo26n-cls.pt
+/yolo26n.pt
 
 # Recognition source images and labels are versioned. Generated derivatives
 # and machine reports can be reproduced with the documented maintenance tasks.

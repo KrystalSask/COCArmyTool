@@ -1,6 +1,8 @@
-import type { RecognitionLayout, ScreenshotPreflight } from './types'
-import { locatePanelFromPixels, refinePanelFromPixels, selectPanelProfile } from './panelLocator'
+import type { PanelCandidateDiagnostic, RecognitionLayout, ScreenshotPreflight } from './types'
+import { createPanelFallback, locatePanelCandidatesFromPixels, type LocatedPanel } from './panelLocator'
+import { registerPanelCandidates } from './panelRegistration'
 import { MAX_INPUT_PIXELS } from './imageNormalization'
+import { cropImageData, locateGameViewport, projectRectFromViewport } from './viewportLocator'
 
 export interface DimensionInspection {
   complete: boolean
@@ -14,7 +16,6 @@ export const inspectDimensions = (width: number, height: number, mimeType: strin
   if (!['image/png', 'image/jpeg', 'image/webp'].includes(mimeType)) issues.push('仅支持 PNG、JPG 或 WebP 图片')
   if (width < 1000 || height < 500) issues.push('图片分辨率过低，请上传原始完整截图')
   if (width * height > MAX_INPUT_PIXELS) issues.push('图片像素总量过大，请使用不超过 4000 万像素的完整截图')
-  if (aspectRatio < 1.3 || aspectRatio > 2.4) issues.push('未检测到完整横屏画面，请上传未裁剪的游戏截图')
   return { complete: issues.length === 0, aspectRatio, issues }
 }
 
@@ -41,46 +42,64 @@ interface PixelStats {
   layout: RecognitionLayout
   layoutConfidence: number
   woodPixelRatio: number
-  panel: ReturnType<typeof selectPanelProfile>
+  panel: LocatedPanel
+  gameViewport: ScreenshotPreflight['gameViewport']
+  viewportConfidence: number
+  viewportPixels: ImageData
 }
 
 const inspectPixels = (image: HTMLImageElement, panelOverride?: ScreenshotPreflight['panel']): PixelStats => {
   const width = 512
   const height = Math.max(220, Math.round(width / (image.naturalWidth / image.naturalHeight)))
-  const profilePanel = selectPanelProfile(image.naturalWidth, image.naturalHeight)
   const canvas = document.createElement('canvas')
   canvas.width = width
   canvas.height = height
   const context = canvas.getContext('2d', { willReadFrequently: true })
-  if (!context) return { layout: 'unknown', layoutConfidence: 0, woodPixelRatio: 0, panel: profilePanel }
+  if (!context) return {
+    layout: 'unknown', layoutConfidence: 0, woodPixelRatio: 0,
+    panel: createPanelFallback(), gameViewport: { x: 0, y: 0, width: 1, height: 1 }, viewportConfidence: 0,
+    viewportPixels: { width: 0, height: 0, data: new Uint8ClampedArray(0), colorSpace: 'srgb' } as ImageData,
+  }
   context.drawImage(image, 0, 0, width, height)
   const imageData = context.getImageData(0, 0, width, height)
-  const searchedPanel = locatePanelFromPixels(imageData, profilePanel)
-  const edgeDarkRatio = (top: number, bottom: number) => {
-    let dark = 0
-    let total = 0
-    for (let y = Math.round(height * top); y < Math.round(height * bottom); y += 2) for (let x = 0; x < width; x += 2) {
-      const offset = (y * width + x) * 4
-      total += 1
-      if (imageData.data[offset] < 20 && imageData.data[offset + 1] < 20 && imageData.data[offset + 2] < 20) dark += 1
-    }
-    return total ? dark / total : 0
+  const viewport = locateGameViewport(imageData)
+  const viewportPixels = cropImageData(imageData, viewport.rect)
+  const manualInViewport = panelOverride ? {
+    x: (panelOverride.x - viewport.rect.x) / viewport.rect.width,
+    y: (panelOverride.y - viewport.rect.y) / viewport.rect.height,
+    width: panelOverride.width / viewport.rect.width,
+    height: panelOverride.height / viewport.rect.height,
+  } : undefined
+  const coarseCandidates = locatePanelCandidatesFromPixels(viewportPixels, createPanelFallback(), manualInViewport)
+  // 提交的手动面板直接作为生产候选：跳过全分辨率内部注册，避免注册候选
+  // 替换或移动用户矩形。自动路径保留现有注册行为。
+  let registeredCandidates: PanelCandidateDiagnostic[] = []
+  if (!manualInViewport) {
+    const registrationWidth = Math.min(1536, image.naturalWidth)
+    const registrationHeight = Math.max(320, Math.round(registrationWidth / (image.naturalWidth / image.naturalHeight)))
+    const registrationCanvas = document.createElement('canvas')
+    registrationCanvas.width = registrationWidth
+    registrationCanvas.height = registrationHeight
+    const registrationContext = registrationCanvas.getContext('2d', { willReadFrequently: true })
+    registrationContext?.drawImage(image, 0, 0, registrationWidth, registrationHeight)
+    const registrationFullPixels = registrationContext?.getImageData(0, 0, registrationWidth, registrationHeight)
+    const registrationPixels = registrationFullPixels ? cropImageData(registrationFullPixels, viewport.rect) : viewportPixels
+    registeredCandidates = registerPanelCandidates(registrationPixels, coarseCandidates, 5)
   }
-  const videoCanvas = edgeDarkRatio(0, .12) > .88 || edgeDarkRatio(.87, 1) > .88
-  const coarsePanel = panelOverride
-    ? { deviceProfile: 'generic-landscape' as const, panel: panelOverride, confidence: 1, source: 'manual' as const }
-    : videoCanvas && searchedPanel.source === 'automatic' ? searchedPanel
-      : profilePanel.deviceProfile !== 'generic-landscape' && profilePanel.deviceProfile !== 'unknown'
-        ? { ...profilePanel, source: 'profile' as const }
-      : searchedPanel.source === 'automatic'
-      ? (() => {
-          const profile = profilePanel.panel
-          const found = searchedPanel.panel
-          const closeToProfile = Math.abs(profile.x - found.x) < .035 && Math.abs(profile.y - found.y) < .045
-            && Math.abs(profile.width - found.width) < .05 && Math.abs(profile.height - found.height) < .06
-          return closeToProfile ? { ...profilePanel, source: 'profile' as const } : searchedPanel
-        })()
-      : { ...profilePanel, source: 'profile' as const }
+  // Registration remains in shadow mode until card/hero structure scores join
+  // the selector. Internal edges alone can prefer a strong card edge, so the
+  // legacy refined seed remains the production choice during this phase.
+  const legacySelected = coarseCandidates[0]
+  const selectedInViewport: LocatedPanel = {
+    panel: legacySelected.panel,
+    confidence: legacySelected.geometryScore,
+    source: panelOverride ? 'manual' : legacySelected.source === 'fallback' ? 'fallback' : 'automatic',
+  }
+  const panel: LocatedPanel = {
+    ...selectedInViewport,
+    panel: projectRectFromViewport(selectedInViewport.panel, viewport.rect),
+  }
+  const coarsePanel = panel
   const pixels = imageData.data
 
   let wood = 0
@@ -115,11 +134,17 @@ const inspectPixels = (image: HTMLImageElement, panelOverride?: ScreenshotPrefli
   const attackButtonRatio = attackButtonTotal ? attackButton / attackButtonTotal : 0
   const woodPixelRatio = woodTotal ? wood / woodTotal : 0
   const layout: RecognitionLayout = attackButtonRatio > .5 ? 'attack' : greenRatio > .06 ? 'edit' : 'saved'
-  const panel = coarsePanel.source === 'automatic' ? coarsePanel : refinePanelFromPixels(imageData, coarsePanel)
   const layoutConfidence = layout === 'attack'
     ? Math.min(.98, .62 + (attackButtonRatio - .5) * 1.8)
     : Math.min(.98, .62 + Math.abs(greenRatio - .06) * 2.5)
-  return { layout, layoutConfidence, woodPixelRatio, panel }
+  Object.assign(panel, {
+    candidates: registeredCandidates.map((candidate) => ({
+      ...candidate,
+      panel: projectRectFromViewport(candidate.panel, viewport.rect),
+      anchorEvidence: candidate.anchorEvidence.map((evidence) => ({ ...evidence, rect: projectRectFromViewport(evidence.rect, viewport.rect) })),
+    })),
+  })
+  return { layout, layoutConfidence, woodPixelRatio, panel, gameViewport: viewport.rect, viewportConfidence: viewport.confidence, viewportPixels }
 }
 
 export const inspectScreenshotFile = async (file: File, panelOverride?: ScreenshotPreflight['panel']): Promise<ScreenshotPreflight> => {
@@ -138,11 +163,18 @@ export const inspectScreenshotFile = async (file: File, panelOverride?: Screensh
     sha256: await hashFile(file),
     layout: pixelStats.layout,
     layoutConfidence: pixelStats.layoutConfidence,
-    deviceProfile: pixelStats.panel.deviceProfile,
+    gameViewport: pixelStats.gameViewport,
+    viewportConfidence: pixelStats.viewportConfidence,
     panel: pixelStats.panel.panel,
     panelConfidence: pixelStats.panel.confidence,
-    panelSource: pixelStats.panel.source ?? 'profile',
+    panelSource: pixelStats.panel.source ?? 'fallback',
+    panelCandidates: (pixelStats.panel as LocatedPanel & { candidates?: ScreenshotPreflight['panelCandidates'] }).candidates,
+    panelSelectionGap: (() => {
+      const candidates = (pixelStats.panel as LocatedPanel & { candidates?: ScreenshotPreflight['panelCandidates'] }).candidates
+      return candidates && candidates.length > 1 ? candidates[0].geometryScore - candidates[1].geometryScore : undefined
+    })(),
     woodPixelRatio: pixelStats.woodPixelRatio,
+    viewportPixels: pixelStats.viewportPixels,
     complete: issues.length === 0,
     issues,
   }

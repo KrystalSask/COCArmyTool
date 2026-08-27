@@ -33,11 +33,25 @@ test('正式支持格式和尺寸派生图保持等价定位与卡片切分', as
   }
 })
 
-test('50% 压力样本不会绕过人工确认门槛', async ({ page }) => {
+test('50% 压力样本的缺失数量不会被容量规则补全或绕过人工确认', async ({ page }) => {
   await page.goto('/')
   await page.getByRole('button', { name: /截图识别/ }).click()
   await page.getByLabel('上传完整军队配置截图').setInputFiles('recognition-samples/batch-01-dev/derived/scale-50/001.png')
   await expect(page.getByText(/完整截图检查通过/)).toBeVisible()
   await page.getByRole('button', { name: '生成真实识别候选' }).click()
-  await expect(page.getByRole('button', { name: '确认并进入配兵编辑器' })).toBeDisabled()
+  // 缺失数量保持未解决：确认按钮保持可操作，点击后激活并定位第一个未解决项，
+  // 而不是进入编辑器。
+  const gate = page.getByTestId('recognition-review-gate')
+  const gateButton = gate.getByRole('button', { name: /定位首个待确认项（剩余/ })
+  await expect(gateButton).toBeEnabled()
+  await expect(gate).toContainText('个待确认项')
+  await gateButton.click()
+  const activeReview = page.locator('.recognized-card.active, .recognized-hero.active').first()
+  await expect(activeReview).toBeAttached()
+  const activeKey = await activeReview.getAttribute('data-review-key')
+  expect(activeKey).toBeTruthy()
+  // 覆盖层中同一稳定键的证据矩形同步高亮。
+  await expect(page.locator(`.recognition-card-box[aria-label="定位${activeKey}"]`)).toHaveClass(/active/)
+  // 未进入编辑器。
+  await expect(gateButton).toBeVisible()
 })

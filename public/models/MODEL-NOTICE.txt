@@ -1,0 +1,10 @@
+Army card classifier
+  Source model: artifacts/army-card-classifier-cn-v2.onnx
+  Export metadata: Ultralytics YOLO; license declared by model: AGPL-3.0
+  License: https://www.gnu.org/licenses/agpl-3.0.txt
+
+Army count OCR
+  Model: RapidOCR PP-OCRv6_rec_small.onnx (RapidOCR 3.9.2)
+  RapidOCR license: Apache-2.0
+  Source: https://github.com/RapidAI/RapidOCR
+  License: https://www.apache.org/licenses/LICENSE-2.0.txt

@@ -8,6 +8,14 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['army-icon.svg', 'game-icons/**/*.png'],
+      workbox: {
+        globIgnores: ['**/models/**', '**/*.wasm'],
+        runtimeCaching: [{
+          urlPattern: ({ url }) => url.pathname.includes('/models/') || url.pathname.endsWith('.wasm'),
+          handler: 'CacheFirst',
+          options: { cacheName: 'recognition-models-v1', expiration: { maxEntries: 8, maxAgeSeconds: 60 * 60 * 24 * 365 } },
+        }],
+      },
       manifest: {
         name: 'COCArmyTool - COC 配兵助手',
         short_name: 'COCArmyTool',

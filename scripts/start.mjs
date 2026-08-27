@@ -13,7 +13,8 @@ const actions = {
   test: { label: '运行单元与组件测试', script: 'test' },
   e2e: { label: '运行 Edge 端到端测试', script: 'test:e2e' },
   build: { label: '构建网页版', script: 'build' },
-  'desktop-build': { label: '构建 Windows 安装包', script: 'desktop:build', needsRust: true },
+  'desktop-build': { label: '构建 Windows NSIS 安装包（备用）', script: 'desktop:build', needsRust: true },
+  'release-portable': { label: '构建 Windows 便携版 ZIP', script: 'release:portable', needsRust: true },
 }
 
 const commandExists = (command, args = ['--version']) => {
@@ -84,14 +85,15 @@ const printHelp = () => {
   node scripts/start.mjs [操作]
 
 操作：
-  desktop       启动桌面开发版（npm start 的默认操作）
-  web           启动网页版
-  test          运行单元与组件测试
-  e2e           运行 Edge 端到端测试
-  build         构建网页版
-  desktop-build 构建 Windows 安装包
-  check         检查本地开发环境
-  help          显示此帮助
+  desktop        启动桌面开发版（npm start 的默认操作）
+  web            启动网页版
+  test           运行单元与组件测试
+  e2e            运行 Edge 端到端测试
+  build          构建网页版
+  desktop-build  构建 Windows NSIS 安装包（备用）
+  release-portable 构建 Windows 便携版 ZIP（正式发布产物）
+  check          检查本地开发环境
+  help           显示此帮助
 
 不传操作时显示交互菜单。`)
 }
@@ -99,7 +101,7 @@ const printHelp = () => {
 const showMenu = async () => {
   const entries = [
     ['1', 'desktop'], ['2', 'web'], ['3', 'test'], ['4', 'e2e'],
-    ['5', 'build'], ['6', 'desktop-build'], ['7', 'check'], ['0', 'exit'],
+    ['5', 'build'], ['6', 'desktop-build'], ['7', 'release-portable'], ['8', 'check'], ['0', 'exit'],
   ]
   console.log('\nCOCArmyTool 统一启动入口\n')
   entries.forEach(([key, name]) => console.log(`${key}. ${name === 'exit' ? '退出' : (actions[name]?.label ?? '检查本地开发环境')}`))

@@ -1,0 +1,458 @@
+[
+  {
+    "index": 0,
+    "className": "siege_051_wall_wrecker",
+    "kind": "siege",
+    "id": 51
+  },
+  {
+    "index": 1,
+    "className": "siege_052_battle_blimp",
+    "kind": "siege",
+    "id": 52
+  },
+  {
+    "index": 2,
+    "className": "siege_062_stone_slammer",
+    "kind": "siege",
+    "id": 62
+  },
+  {
+    "index": 3,
+    "className": "siege_075_siege_barracks",
+    "kind": "siege",
+    "id": 75
+  },
+  {
+    "index": 4,
+    "className": "siege_087_log_launcher",
+    "kind": "siege",
+    "id": 87
+  },
+  {
+    "index": 5,
+    "className": "siege_091_flame_flinger",
+    "kind": "siege",
+    "id": 91
+  },
+  {
+    "index": 6,
+    "className": "siege_092_battle_drill",
+    "kind": "siege",
+    "id": 92
+  },
+  {
+    "index": 7,
+    "className": "siege_135_troop_launcher",
+    "kind": "siege",
+    "id": 135
+  },
+  {
+    "index": 8,
+    "className": "siege_188_sky_wagon",
+    "kind": "siege",
+    "id": 188
+  },
+  {
+    "index": 9,
+    "className": "spell_000_lightning_spell",
+    "kind": "spell",
+    "id": 0
+  },
+  {
+    "index": 10,
+    "className": "spell_001_healing_spell",
+    "kind": "spell",
+    "id": 1
+  },
+  {
+    "index": 11,
+    "className": "spell_002_rage_spell",
+    "kind": "spell",
+    "id": 2
+  },
+  {
+    "index": 12,
+    "className": "spell_003_jump_spell",
+    "kind": "spell",
+    "id": 3
+  },
+  {
+    "index": 13,
+    "className": "spell_005_freeze_spell",
+    "kind": "spell",
+    "id": 5
+  },
+  {
+    "index": 14,
+    "className": "spell_009_poison_spell",
+    "kind": "spell",
+    "id": 9
+  },
+  {
+    "index": 15,
+    "className": "spell_010_earthquake_spell",
+    "kind": "spell",
+    "id": 10
+  },
+  {
+    "index": 16,
+    "className": "spell_011_haste_spell",
+    "kind": "spell",
+    "id": 11
+  },
+  {
+    "index": 17,
+    "className": "spell_016_clone_spell",
+    "kind": "spell",
+    "id": 16
+  },
+  {
+    "index": 18,
+    "className": "spell_017_skeleton_spell",
+    "kind": "spell",
+    "id": 17
+  },
+  {
+    "index": 19,
+    "className": "spell_028_bat_spell",
+    "kind": "spell",
+    "id": 28
+  },
+  {
+    "index": 20,
+    "className": "spell_035_invisibility_spell",
+    "kind": "spell",
+    "id": 35
+  },
+  {
+    "index": 21,
+    "className": "spell_053_recall_spell",
+    "kind": "spell",
+    "id": 53
+  },
+  {
+    "index": 22,
+    "className": "spell_070_overgrowth_spell",
+    "kind": "spell",
+    "id": 70
+  },
+  {
+    "index": 23,
+    "className": "spell_098_revive_spell",
+    "kind": "spell",
+    "id": 98
+  },
+  {
+    "index": 24,
+    "className": "spell_109_ice_block_spell",
+    "kind": "spell",
+    "id": 109
+  },
+  {
+    "index": 25,
+    "className": "spell_120_totem_spell",
+    "kind": "spell",
+    "id": 120
+  },
+  {
+    "index": 26,
+    "className": "spell_123_angry_spell",
+    "kind": "spell",
+    "id": 123
+  },
+  {
+    "index": 27,
+    "className": "troop_000_barbarian",
+    "kind": "troop",
+    "id": 0
+  },
+  {
+    "index": 28,
+    "className": "troop_001_archer",
+    "kind": "troop",
+    "id": 1
+  },
+  {
+    "index": 29,
+    "className": "troop_002_goblin",
+    "kind": "troop",
+    "id": 2
+  },
+  {
+    "index": 30,
+    "className": "troop_003_giant",
+    "kind": "troop",
+    "id": 3
+  },
+  {
+    "index": 31,
+    "className": "troop_004_wall_breaker",
+    "kind": "troop",
+    "id": 4
+  },
+  {
+    "index": 32,
+    "className": "troop_005_balloon",
+    "kind": "troop",
+    "id": 5
+  },
+  {
+    "index": 33,
+    "className": "troop_006_wizard",
+    "kind": "troop",
+    "id": 6
+  },
+  {
+    "index": 34,
+    "className": "troop_007_healer",
+    "kind": "troop",
+    "id": 7
+  },
+  {
+    "index": 35,
+    "className": "troop_008_dragon",
+    "kind": "troop",
+    "id": 8
+  },
+  {
+    "index": 36,
+    "className": "troop_009_p_e_k_k_a",
+    "kind": "troop",
+    "id": 9
+  },
+  {
+    "index": 37,
+    "className": "troop_010_minion",
+    "kind": "troop",
+    "id": 10
+  },
+  {
+    "index": 38,
+    "className": "troop_011_hog_rider",
+    "kind": "troop",
+    "id": 11
+  },
+  {
+    "index": 39,
+    "className": "troop_012_valkyrie",
+    "kind": "troop",
+    "id": 12
+  },
+  {
+    "index": 40,
+    "className": "troop_013_golem",
+    "kind": "troop",
+    "id": 13
+  },
+  {
+    "index": 41,
+    "className": "troop_015_witch",
+    "kind": "troop",
+    "id": 15
+  },
+  {
+    "index": 42,
+    "className": "troop_017_lava_hound",
+    "kind": "troop",
+    "id": 17
+  },
+  {
+    "index": 43,
+    "className": "troop_022_bowler",
+    "kind": "troop",
+    "id": 22
+  },
+  {
+    "index": 44,
+    "className": "troop_023_baby_dragon",
+    "kind": "troop",
+    "id": 23
+  },
+  {
+    "index": 45,
+    "className": "troop_024_miner",
+    "kind": "troop",
+    "id": 24
+  },
+  {
+    "index": 46,
+    "className": "troop_026_super_barbarian",
+    "kind": "troop",
+    "id": 26
+  },
+  {
+    "index": 47,
+    "className": "troop_027_super_archer",
+    "kind": "troop",
+    "id": 27
+  },
+  {
+    "index": 48,
+    "className": "troop_028_super_wall_breaker",
+    "kind": "troop",
+    "id": 28
+  },
+  {
+    "index": 49,
+    "className": "troop_029_super_giant",
+    "kind": "troop",
+    "id": 29
+  },
+  {
+    "index": 50,
+    "className": "troop_053_yeti",
+    "kind": "troop",
+    "id": 53
+  },
+  {
+    "index": 51,
+    "className": "troop_055_sneaky_goblin",
+    "kind": "troop",
+    "id": 55
+  },
+  {
+    "index": 52,
+    "className": "troop_056_super_miner",
+    "kind": "troop",
+    "id": 56
+  },
+  {
+    "index": 53,
+    "className": "troop_057_rocket_balloon",
+    "kind": "troop",
+    "id": 57
+  },
+  {
+    "index": 54,
+    "className": "troop_058_ice_golem",
+    "kind": "troop",
+    "id": 58
+  },
+  {
+    "index": 55,
+    "className": "troop_059_electro_dragon",
+    "kind": "troop",
+    "id": 59
+  },
+  {
+    "index": 56,
+    "className": "troop_063_inferno_dragon",
+    "kind": "troop",
+    "id": 63
+  },
+  {
+    "index": 57,
+    "className": "troop_064_super_valkyrie",
+    "kind": "troop",
+    "id": 64
+  },
+  {
+    "index": 58,
+    "className": "troop_065_dragon_rider",
+    "kind": "troop",
+    "id": 65
+  },
+  {
+    "index": 59,
+    "className": "troop_066_super_witch",
+    "kind": "troop",
+    "id": 66
+  },
+  {
+    "index": 60,
+    "className": "troop_076_ice_hound",
+    "kind": "troop",
+    "id": 76
+  },
+  {
+    "index": 61,
+    "className": "troop_080_super_bowler",
+    "kind": "troop",
+    "id": 80
+  },
+  {
+    "index": 62,
+    "className": "troop_081_super_dragon",
+    "kind": "troop",
+    "id": 81
+  },
+  {
+    "index": 63,
+    "className": "troop_082_headhunter",
+    "kind": "troop",
+    "id": 82
+  },
+  {
+    "index": 64,
+    "className": "troop_083_super_wizard",
+    "kind": "troop",
+    "id": 83
+  },
+  {
+    "index": 65,
+    "className": "troop_084_super_minion",
+    "kind": "troop",
+    "id": 84
+  },
+  {
+    "index": 66,
+    "className": "troop_095_electro_titan",
+    "kind": "troop",
+    "id": 95
+  },
+  {
+    "index": 67,
+    "className": "troop_097_apprentice_warden",
+    "kind": "troop",
+    "id": 97
+  },
+  {
+    "index": 68,
+    "className": "troop_098_super_hog_rider",
+    "kind": "troop",
+    "id": 98
+  },
+  {
+    "index": 69,
+    "className": "troop_109_ruin_witch",
+    "kind": "troop",
+    "id": 109
+  },
+  {
+    "index": 70,
+    "className": "troop_110_root_rider",
+    "kind": "troop",
+    "id": 110
+  },
+  {
+    "index": 71,
+    "className": "troop_123_druid",
+    "kind": "troop",
+    "id": 123
+  },
+  {
+    "index": 72,
+    "className": "troop_132_thrower",
+    "kind": "troop",
+    "id": 132
+  },
+  {
+    "index": 73,
+    "className": "troop_147_super_yeti",
+    "kind": "troop",
+    "id": 147
+  },
+  {
+    "index": 74,
+    "className": "troop_150_furnace",
+    "kind": "troop",
+    "id": 150
+  },
+  {
+    "index": 75,
+    "className": "troop_177_meteor_golem",
+    "kind": "troop",
+    "id": 177
+  }
+]

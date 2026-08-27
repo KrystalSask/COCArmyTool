@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [ValidateSet('', 'desktop', 'web', 'test', 'e2e', 'build', 'desktop-build', 'check', 'help')]
+    [ValidateSet('', 'desktop', 'web', 'test', 'e2e', 'build', 'desktop-build', 'release-portable', 'check', 'help')]
     [string]$Action = ''
 )
 

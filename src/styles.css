@@ -523,6 +523,18 @@ footer a { color: #ffd36c; }
 .recognized-card-main small, .recognized-hero-heading small { color: #dbc3ab; font-size: 9px; }
 .recognized-card-main strong, .recognized-hero-heading strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .recognized-card-main em, .recognized-hero-heading em { color: #ffe293; font-size: 9px; font-style: normal; }
+.unresolved-badge { justify-self: start; padding: 2px 7px; border-radius: 999px; color: #ffe9c4; background: #9a5a2a; font-size: 8px; line-height: 1.4; }
+.unresolved-badge.missing-count, .unresolved-badge.missing-pet, .unresolved-badge.incomplete-equipment, .unresolved-badge.missing-mode { background: #b3402f; }
+.unresolved-badge.low-confidence, .unresolved-badge.low-confidence-pet { background: #b08325; }
+.unresolved-badge.equipment-conflict, .unresolved-badge.validation { background: #a12d55; }
+.unresolved-badge.unconfirmed { background: #6d5a86; }
+.hero-evidence-block { min-width: 0; display: grid; gap: 4px; padding: 6px; border: 1px solid rgba(255,255,255,.08); border-radius: 8px; background: rgba(0,0,0,.14); }
+.hero-evidence-block.active { border-color: #ff5e4c; box-shadow: 0 0 0 2px rgba(255, 94, 76, .35); }
+.hero-evidence-heading { display: flex; align-items: center; justify-content: space-between; gap: 6px; width: 100%; padding: 0; border: 0; background: none; color: #e4cdb7; font-size: 9px; text-align: left; cursor: pointer; }
+.hero-evidence-heading .evidence-candidates-count { color: #bca88f; font-size: 8px; }
+.hero-evidence-block .candidate-row button { grid-template-columns: 24px auto; padding: 2px; }
+.hero-evidence-block .candidate-row .game-icon { width: 24px; height: 27px; }
+.unresolved-hint { color: #ffd588; font-size: 8px; align-self: center; }
 .recognized-count { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 8px 0; color: #ecd7c2; font-size: 10px; }
 .recognized-count input { width: 70px; padding: 6px; border-radius: 7px; text-align: center; }
 .count-candidate-row { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 7px; color: #d9c2aa; font-size: 8px; }
@@ -537,10 +549,10 @@ footer a { color: #ffd36c; }
 .recognized-card-actions button { padding: 0; border: 0; color: #8edcff; background: none; font-size: 9px; }
 .recognized-card-actions .confirm-link { color: #a6f07b; }
 .recognized-card > p, .recognized-hero > p { margin: 8px 0 0; color: #ffd588; font-size: 9px; line-height: 1.5; }
-.recognized-hero-grid { display: grid; grid-template-columns: repeat(4, minmax(190px, 1fr)); gap: 10px; }
-.recognized-hero { display: grid; gap: 8px; }
-.recognized-hero label { display: grid; gap: 4px; color: #e4cdb7; font-size: 9px; }
-.recognized-hero select { width: 100%; padding: 7px; border-radius: 7px; }
+.recognized-hero-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.recognized-hero { min-width: 0; display: grid; gap: 8px; }
+.recognized-hero label { min-width: 0; display: grid; gap: 4px; color: #e4cdb7; font-size: 9px; }
+.recognized-hero select { min-width: 0; width: 100%; max-width: 100%; padding: 7px; border-radius: 7px; }
 .recognized-pet-preview { display: flex; align-items: center; gap: 7px; color: #f1dfcc; font-size: 10px; }
 .recognized-pet-preview .game-icon { width: 32px; height: 32px; border-radius: 6px; background: #477d97; }
 .mock-confirm-button { justify-self: start; }
@@ -553,7 +565,7 @@ footer a { color: #ffd36c; }
 
 @media (max-width: 1000px) {
   .preflight-grid { grid-template-columns: repeat(2, 1fr); }
-  .recognized-hero-grid { grid-template-columns: repeat(2, 1fr); }
+  .recognized-hero-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @media (max-width: 600px) {

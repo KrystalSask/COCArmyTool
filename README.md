@@ -8,16 +8,17 @@
 
 > 本项目是公开源代码的非商业社区工具，不是开放源代码（Open Source）软件。项目与 Supercell 或国服运营方无隶属、赞助或认可关系。
 
-## 开发期间：双击打开桌面应用
+## 最终用户：便携版发布包
 
-当前项目仍处于开发阶段，根目录提供两个无需手工输入命令的 Windows 入口：
+正式发布产物是 Windows x64 便携 ZIP，不是安装程序：
 
-- `COCArmyTool 开发测试.lnk`：当前工作区已生成的本机推荐入口，带应用图标，直接双击。
-- `COCArmyTool-开发测试.vbs`：可随仓库移动的通用入口，直接双击。
+- 文件名：`release/COCArmyTool-v<版本>-windows-x64-portable.zip`（当前为 `COCArmyTool-v0.2.0-windows-x64-portable.zip`）。
+- 内容：`COCArmyTool.exe` 和简体中文 `使用说明.txt`，解压后双击 EXE 即可运行。
+- 免安装：不写安装列表、不产生卸载入口；也不要求电脑安装 Node.js、Rust 或 Vite。
+- 环境要求：Windows 10/11 64 位（x64），并已安装 Microsoft Edge WebView2 运行时（Windows 11 通常自带）。
+- 数据位置：配兵方案等本地数据保存在 Windows 每用户本地 AppData（`%LOCALAPPDATA%`）下应用标识 `com.cocarmytool.desktop` 对应的 WebView2 用户数据目录，不随便携文件夹携带；“免安装”不等于“数据随身带”。
 
-入口会在后台隐藏终端窗口，自动启动 Tauri 桌面开发版。应用关闭后后台开发进程会一并退出；修改前端代码时仍支持热更新。首次使用需要电脑已经安装 Node.js 22+、npm 和 Rust，项目依赖缺失时入口会自动执行 `npm install`。
-
-启动日志位于 `artifacts/desktop-dev.stdout.log` 和 `artifacts/desktop-dev.stderr.log`。详细说明见 [Windows 开发测试入口](docs/WINDOWS_USAGE.md)。
+构建命令与发布说明见 [便携版发布](docs/PORTABLE_RELEASE.md)。
 
 ## 桌面版基本操作
 
@@ -47,11 +48,13 @@
 | `.\start.ps1 test` | 运行单元与组件测试 |
 | `.\start.ps1 e2e` | 运行 Edge 端到端测试 |
 | `.\start.ps1 build` | 构建网页版 |
-| `.\start.ps1 desktop-build` | 构建 Windows NSIS 安装包 |
+| `.\start.ps1 release-portable` | 构建 Windows 便携版 ZIP（正式发布产物） |
+| `.\start.ps1 desktop-build` | 构建 Windows NSIS 安装包（备用，内部试用） |
 | `npm start` | 默认启动桌面开发版 |
 | `npm run launcher` | 使用跨平台 Node.js 交互菜单 |
+| `npm run release:portable` | 直接执行便携版打包脚本 |
 
-这些脚本用于开发、测试和构建，不是普通用户的应用启动入口。所有入口最终调用 `package.json` 中的标准脚本，避免文档、人工命令和 CI 使用不同流程。
+这些脚本用于开发、测试和构建，不是普通用户的应用启动入口。最终用户只拿到便携 ZIP 中的 `COCArmyTool.exe`。所有入口最终调用 `package.json` 中的标准脚本，避免文档、人工命令和 CI 使用不同流程。
 
 ## 主要功能
 
@@ -62,7 +65,7 @@
 - 内置人工核验的近期配兵快照，并保留作者、来源和有效期。
 - 在浏览器或桌面端本地处理完整横屏截图，提供 Top-3 候选和人工确认流程。
 - 对识别结果设置安全门槛；未确认或不完整配置不能直接复制链接。
-- 支持 PWA 离线缓存，也可构建 Tauri Windows 桌面安装包。
+- 支持 PWA 离线缓存，也可构建 Tauri Windows 桌面便携版（免安装 EXE 压缩包）。
 
 ## 基本使用
 
@@ -123,18 +126,27 @@ npm run test:e2e
 npm run build
 ```
 
-桌面端开发和安装包构建：
+桌面端开发（带热更新）：
 
 ```powershell
 npm run desktop:dev
-npm run desktop:build
 ```
+
+正式发布构建（Windows x64 便携 ZIP）：
+
+```powershell
+npm run release:portable
+```
+
+产物：`release/COCArmyTool-v0.2.0-windows-x64-portable.zip`。详细流程、产物结构和验证要求见 [便携版发布](docs/PORTABLE_RELEASE.md)。
+
+备用：`npm run desktop:build` 仍可生成 NSIS 安装包（`src-tauri/target/release/bundle/`），仅用于内部试用，不是对外发布产物。
 
 端到端测试默认使用 `C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe`；如安装路径不同，请调整 `playwright.config.ts`。
 
 ## 数据和隐私
 
-- 配兵方案保存在当前应用来源对应的 IndexedDB 中。
+- 配兵方案保存在当前应用来源对应的 IndexedDB 中。桌面便携版使用应用标识 `com.cocarmytool.desktop` 对应的 Windows 每用户本地 AppData WebView2 用户数据目录（`%LOCALAPPDATA%\com.cocarmytool.desktop\EBWebView`），与网页版来源互相隔离。
 - 清理浏览器/应用站点数据会删除本地方案，请定期从方案库导出 JSON 备份。
 - 截图识别、模板匹配和数量分析均在本机完成。
 - 数据库名和备份格式保留历史标识，以兼容旧版“COC 配兵助手”数据。
@@ -158,4 +170,4 @@ npm run desktop:build
 
 `public/game-icons` 中的游戏图像、Clash of Clans/Supercell 名称和其他第三方素材不由本项目重新许可，也不自动受项目代码许可覆盖。来源、上游许可和使用边界见[第三方声明](THIRD_PARTY_NOTICES.md)。
 
-最后核对：2026-08-24。
+最后核对：2026-08-27。

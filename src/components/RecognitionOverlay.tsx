@@ -1,7 +1,9 @@
-import type { PointerEvent as ReactPointerEvent } from 'react'
+import { Fragment, type PointerEvent as ReactPointerEvent } from 'react'
+import { heroPetKey } from '../recognition/review'
 import { rectStyle } from '../recognition/layouts'
 import type { ScreenshotRecognitionResult, NormalizedRect } from '../recognition/types'
 import type { DetectedRegionCards } from '../recognition/cardAnalysis'
+import type { AnalyzedHeroColumn } from '../recognition/heroSubcardAnalysis'
 
 interface Props {
   imageUrl: string
@@ -9,17 +11,19 @@ interface Props {
   result?: ScreenshotRecognitionResult
   preflightPanel?: NormalizedRect
   detectedRegions?: DetectedRegionCards[]
+  detectedHeroes?: AnalyzedHeroColumn[]
   debug: boolean
   activeKey?: string
   onSelectKey?: (key: string) => void
   editablePanel?: NormalizedRect
   onEditablePanelChange?: (panel: NormalizedRect) => void
+  onEditablePanelRelease?: (corner: 'nw' | 'ne' | 'sw' | 'se', panel: NormalizedRect) => void
 }
 
 const clamp = (value: number, minimum: number, maximum: number) => Math.max(minimum, Math.min(maximum, value))
 
-export function RecognitionOverlay({ imageUrl, alt, result, preflightPanel, detectedRegions, debug, activeKey, onSelectKey, editablePanel, onEditablePanelChange }: Props) {
-  const listenToPointer = (event: ReactPointerEvent, update: (dx: number, dy: number) => void) => {
+export function RecognitionOverlay({ imageUrl, alt, result, preflightPanel, detectedRegions, detectedHeroes, debug, activeKey, onSelectKey, editablePanel, onEditablePanelChange, onEditablePanelRelease }: Props) {
+  const listenToPointer = (event: ReactPointerEvent, update: (dx: number, dy: number) => void, onFinish?: () => void) => {
     event.preventDefault()
     const stage = event.currentTarget.closest('.recognition-image-stage')
     if (!stage) return
@@ -28,7 +32,11 @@ export function RecognitionOverlay({ imageUrl, alt, result, preflightPanel, dete
       const bounds = stage.getBoundingClientRect()
       update((next.clientX - start.x) / bounds.width, (next.clientY - start.y) / bounds.height)
     }
-    const finish = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', finish) }
+    const finish = () => {
+      window.removeEventListener('pointermove', move)
+      window.removeEventListener('pointerup', finish)
+      onFinish?.()
+    }
     window.addEventListener('pointermove', move)
     window.addEventListener('pointerup', finish)
   }
@@ -37,6 +45,7 @@ export function RecognitionOverlay({ imageUrl, alt, result, preflightPanel, dete
     if (!editablePanel || !onEditablePanelChange) return
     event.stopPropagation()
     const start = editablePanel
+    let lastPanel = editablePanel
     listenToPointer(event, (dx, dy) => {
       let left = start.x
       let top = start.y
@@ -46,8 +55,9 @@ export function RecognitionOverlay({ imageUrl, alt, result, preflightPanel, dete
       if (corner.includes('e')) right = clamp(right + dx, left + .2, 1)
       if (corner.includes('n')) top = clamp(top + dy, 0, bottom - .2)
       if (corner.includes('s')) bottom = clamp(bottom + dy, top + .2, 1)
-      onEditablePanelChange({ x: left, y: top, width: right - left, height: bottom - top })
-    })
+      lastPanel = { x: left, y: top, width: right - left, height: bottom - top }
+      onEditablePanelChange(lastPanel)
+    }, () => onEditablePanelRelease?.(corner, lastPanel))
   }
 
   const beginMove = (event: ReactPointerEvent) => {
@@ -67,12 +77,26 @@ export function RecognitionOverlay({ imageUrl, alt, result, preflightPanel, dete
       {(['nw', 'ne', 'sw', 'se'] as const).map((corner) => <button key={corner} type="button" aria-label={`调整面板${corner}`} className={`crop-handle ${corner}`} onPointerDown={(event) => beginResize(corner, event)} />)}
     </div>}
     {!result && debug && detectedRegions?.flatMap((region) => region.slots.map((slot, index) => <span className="recognition-region-box" style={rectStyle(slot.rect)} key={`${region.region}-${index}`}>{index + 1}</span>))}
+    {!result && debug && detectedHeroes?.flatMap((hero) => [
+      ...hero.equipment.map((item, index) => <span className="recognition-region-box hero-subcard-segmented" style={rectStyle(item.rect)} key={`hero-${hero.index}-equipment-${index}`}>装</span>),
+      <span className="recognition-region-box hero-subcard-segmented" style={rectStyle(hero.pet.rect)} key={`hero-${hero.index}-pet`}>宠</span>,
+    ])}
     {result && debug && <>
       <span className="recognition-panel-box" style={rectStyle(result.panel)}>有效军队面板</span>
       {result.anchors.map((anchor) => <span className="recognition-anchor-box" style={rectStyle(anchor.rect)} key={anchor.key}>{anchor.label}</span>)}
       {result.regions.map((region) => <span className={`recognition-region-box region-${region.kind}`} style={rectStyle(region.rect)} key={region.kind}>{region.label}</span>)}
     </>}
     {result?.cards.map((card) => <button type="button" aria-label={`定位${card.key}`} className={`recognition-card-box ${activeKey === card.key ? 'active' : ''} ${card.confirmed ? 'confirmed' : 'unresolved'}`} style={rectStyle(card.rect)} key={card.key} onClick={() => onSelectKey?.(card.key)} />)}
-    {result?.heroes.map((hero) => <button type="button" aria-label={`定位${hero.key}`} className={`recognition-card-box hero-box ${activeKey === hero.key ? 'active' : ''} ${hero.confirmed ? 'confirmed' : 'unresolved'}`} style={rectStyle(hero.rect)} key={hero.key} onClick={() => onSelectKey?.(hero.key)} />)}
+    {result?.heroes.map((hero) => {
+      const active = activeKey === hero.key || Boolean(activeKey?.startsWith(`${hero.key}-`))
+      return <Fragment key={hero.key}>
+        <button type="button" aria-label={`定位${hero.key}`} className={`recognition-card-box hero-box ${active ? 'active' : ''} ${hero.confirmed ? 'confirmed' : 'unresolved'}`} style={rectStyle(hero.rect)} onClick={() => onSelectKey?.(hero.key)} />
+        {(hero.equipment ?? []).map((item, index) => {
+          const evidenceKey = `${hero.key}-equipment-${index}`
+          return <button type="button" aria-label={`定位${evidenceKey}`} className={`recognition-card-box hero-evidence-box equipment ${activeKey === evidenceKey ? 'active' : ''} ${hero.confirmed ? 'confirmed' : 'unresolved'}`} style={rectStyle(item.rect)} key={evidenceKey} onClick={() => onSelectKey?.(evidenceKey)} />
+        })}
+        {hero.pet && <button type="button" aria-label={`定位${heroPetKey(hero.key)}`} className={`recognition-card-box hero-evidence-box pet ${activeKey === heroPetKey(hero.key) ? 'active' : ''} ${hero.confirmed ? 'confirmed' : 'unresolved'}`} style={rectStyle(hero.pet.rect)} key={heroPetKey(hero.key)} onClick={() => onSelectKey?.(heroPetKey(hero.key))} />}
+      </Fragment>
+    })}
   </div>
 }
