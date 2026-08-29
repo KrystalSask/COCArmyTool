@@ -1,0 +1,10 @@
+{
+  "name": "coc-sample-receiver",
+  "version": "1.0.0",
+  "description": "COCArmyTool 识别样本收集端点（腾讯云函数 Web 函数）",
+  "main": "index.js",
+  "dependencies": {
+    "cos-nodejs-sdk-v5": "^2.14.0",
+    "express": "^4.19.2"
+  }
+}

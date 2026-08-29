@@ -28,3 +28,8 @@ dataset/
 Thumbs.db
 __pycache__/
 *.py[cod]
+
+# Local development artifacts (not for distribution)
+/feedback/
+/public/feedback-test.jpg
+/启动开发测试版.cmd

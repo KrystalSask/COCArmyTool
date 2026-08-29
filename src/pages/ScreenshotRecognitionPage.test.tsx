@@ -32,6 +32,12 @@ vi.mock('../recognition/cardAnalysis', () => ({
   })),
 }))
 
+const uploadSample = async (container: HTMLElement) => {
+  const input = container.querySelector('input[type="file"]') as HTMLInputElement
+  fireEvent.change(input, { target: { files: [new File(['image'], '001.png', { type: 'image/png' })] } })
+  expect(await screen.findByText(/完整截图检查通过/)).toBeTruthy()
+}
+
 describe('截图识别页面', () => {
   beforeEach(() => {
     vi.stubGlobal('URL', Object.assign(URL, {
@@ -43,12 +49,10 @@ describe('截图识别页面', () => {
   it('上传完整截图并确认候选后进入统一编辑器', async () => {
     const onEdit = vi.fn()
     const { container } = render(<ScreenshotRecognitionPage onEditInCalculator={onEdit} />)
-    const input = container.querySelector('input[type="file"]') as HTMLInputElement
-    fireEvent.change(input, { target: { files: [new File(['image'], '001.png', { type: 'image/png' })] } })
-    expect(await screen.findByText(/完整截图检查通过/)).toBeTruthy()
+    await uploadSample(container)
     fireEvent.click(screen.getByRole('button', { name: '运行模拟识别' }))
     expect(await screen.findByText('模拟识别已完成。请核对黄色和红色项目；当前结果不代表截图真实内容。')).toBeTruthy()
-    const continueButton = screen.getByRole('button', { name: '一键确认全部并进入配兵编辑器' }) as HTMLButtonElement
+    const continueButton = screen.getByRole('button', { name: /一键确认全部/ }) as HTMLButtonElement
     expect(continueButton.disabled).toBe(false)
     fireEvent.click(continueButton)
     expect(onEdit).toHaveBeenCalledWith(expect.objectContaining({ troops: expect.any(Array) }))
@@ -65,9 +69,7 @@ describe('截图识别页面', () => {
   it('存在未解决项时确认按钮定位第一个未解决项而不是进入编辑器', async () => {
     const onEdit = vi.fn()
     const { container } = render(<ScreenshotRecognitionPage onEditInCalculator={onEdit} />)
-    const input = container.querySelector('input[type="file"]') as HTMLInputElement
-    fireEvent.change(input, { target: { files: [new File(['image'], '001.png', { type: 'image/png' })] } })
-    expect(await screen.findByText(/完整截图检查通过/)).toBeTruthy()
+    await uploadSample(container)
     fireEvent.click(screen.getByRole('button', { name: '生成真实识别候选' }))
     const gateButton = await screen.findByRole('button', { name: /定位首个待确认项（剩余/ })
     expect(onEdit).not.toHaveBeenCalled()
@@ -76,5 +78,23 @@ describe('截图识别页面', () => {
     const firstCard = container.querySelector('[data-review-key="mainTroops-0"]')
     expect(firstCard).toBeTruthy()
     expect(firstCard?.className).toContain('active')
+  })
+
+  it('兜底入口跳过确认直接进入编辑器且不回传', async () => {
+    const onEdit = vi.fn()
+    const { container } = render(<ScreenshotRecognitionPage onEditInCalculator={onEdit} />)
+    await uploadSample(container)
+    fireEvent.click(screen.getByRole('button', { name: '生成真实识别候选' }))
+    const skipButton = await screen.findByRole('button', { name: '跳过确认直接进入编辑器' })
+    fireEvent.click(skipButton)
+    expect(onEdit).toHaveBeenCalledTimes(1)
+  })
+
+  it('web 端默认共享：无共享开关，显示上传说明', async () => {
+    const { container } = render(<ScreenshotRecognitionPage onEditInCalculator={vi.fn()} />)
+    await uploadSample(container)
+    expect(screen.queryByText(/共享识别样本/)).toBeNull()
+    expect(container.querySelector('input[type="checkbox"][aria-label], .sample-sharing')).toBeNull()
+    expect(screen.getByText(/机器候选、你的修正结果与配兵链接上传到作者服务器/)).toBeTruthy()
   })
 })

@@ -3,7 +3,10 @@ import { equipmentOwnerById } from './iconIndex'
 import { projectRectToPanel } from './layouts'
 import { extractVisualFeature, featureDistance, type VisualFeatureObservation } from './templateMatcher'
 import { officialEquipmentObservations } from './officialEquipmentTemplates'
-import type { NormalizedRect, ScreenshotPreflight } from './types'
+import { resolveHeroEquipmentGlobally, resolveUniqueVisualCandidates, type RankedVisualCandidate } from './heroInference'
+import { classifyEquipment } from './equipmentModel'
+import { recognitionSettings } from './recognitionSettings'
+import type { EquipmentRecognitionDiagnostic, NormalizedRect, ScreenshotPreflight } from './types'
 
 interface HeroObservation extends VisualFeatureObservation {
   sampleId: string
@@ -13,7 +16,7 @@ interface HeroObservation extends VisualFeatureObservation {
   value?: number
 }
 
-export interface HeroVisualCandidate { id: number, score: number }
+export type HeroVisualCandidate = RankedVisualCandidate
 
 export const recognizedPetId = (candidates: HeroVisualCandidate[]) => {
   const best = candidates[0]
@@ -43,8 +46,10 @@ export interface AnalyzedHeroColumn {
   heroId?: number
   geometryScore: number
   diagnostics: string[]
-  equipment: Array<{ rect: NormalizedRect, candidates: HeroVisualCandidate[] }>
-  pet: { rect: NormalizedRect, candidates: HeroVisualCandidate[], recognizedId?: number }
+  equipmentResolution?: 'confirmed-candidate' | 'ambiguous' | 'unrecognized'
+  equipmentResolutionGap?: number
+  equipment: Array<{ rect: NormalizedRect, candidates: HeroVisualCandidate[], recognition?: EquipmentRecognitionDiagnostic }>
+  pet: { rect: NormalizedRect, candidates: HeroVisualCandidate[], recognizedId?: number, resolution?: 'confirmed-candidate' | 'ambiguous' | 'unrecognized' }
   mode?: { rect: NormalizedRect, candidates: Array<{ value: 0 | 1, score: number }> }
 }
 
@@ -58,6 +63,23 @@ const equipmentRectsByGeometry = {
   full: [[35, 977, 91, 88], [135, 971, 88, 88], [259, 973, 87, 86], [356, 971, 90, 91], [480, 972, 90, 90], [579, 971, 91, 90], [703, 973, 91, 89], [804, 972, 87, 87]],
 } as const
 
+const createGeometryRects = (
+  geometry: keyof typeof geometryX,
+  layout: string,
+  panel: NormalizedRect,
+  dx = 0,
+  dy = 0,
+  spacing = 1,
+) => {
+  const base = layout === 'attack'
+    ? equipmentRectsByGeometry[geometry]
+    : geometryX[geometry].map((x) => [x, 970, 90, 90] as const)
+  const anchor = base[0][0]
+  return base.map(([x, y, width, height]) => projectRectToPanel(
+    panelRect(anchor + (x - anchor) * spacing + dx, y + dy, width, height), panel,
+  ))
+}
+
 const rank = <T extends HeroObservation>(source: HTMLCanvasElement, rect: NormalizedRect, sourceObservations: T[], key: (item: T) => number, limit = 3, preferredLayout?: string) => {
   const feature = extractVisualFeature(source, rect)
   if (!feature) return []
@@ -68,7 +90,7 @@ const rank = <T extends HeroObservation>(source: HTMLCanvasElement, rect: Normal
       + (preferredLayout && observation.layout && observation.layout !== preferredLayout ? .05 : 0)
     best.set(id, Math.min(best.get(id) ?? 99, distance))
   })
-  return [...best].sort((left, right) => left[1] - right[1]).slice(0, limit).map(([id, distance]) => ({ id, score: Math.max(0, 1 - distance) }))
+  return [...best].sort((left, right) => left[1] - right[1]).slice(0, limit).map(([id, distance]) => ({ id, score: Math.max(0, 1 - distance), source: 'template' as const }))
 }
 
 const panelRect = (x: number, y: number, width: number, height: number): NormalizedRect => ({ x: x / 2160, y: y / 1120, width: width / 2160, height: height / 1120 })
@@ -109,19 +131,36 @@ const heroGeometryEdgeScore = (pixels: ImageData, rects: NormalizedRect[]) => {
   return scores.reduce((sum, score) => sum + score, 0) / Math.max(1, scores.length)
 }
 
-export const analyzeHeroSubcards = (source: HTMLCanvasElement, preflight: ScreenshotPreflight): AnalyzedHeroColumn[] => {
+export interface HeroStructureScore {
+  score: number
+  baselineScore: number
+  best: { geometry: keyof typeof geometryX, dx: number, dy: number, spacing: number }
+}
+
+/**
+ * Scores the repeated hero/equipment grid without looking at icon templates.
+ * This is used both to choose the panel and to decide whether a local crop
+ * registration is safe to apply.
+ */
+export const scoreHeroStructure = (pixels: ImageData, layout: string = 'saved'): HeroStructureScore => {
+  const panel = { x: 0, y: 0, width: 1, height: 1 }
+  const candidates = (['inset', 'full'] as const).flatMap((geometry) =>
+    [-12, 0, 12].flatMap((dx) => [-10, 0, 10].flatMap((dy) => [.994, 1, 1.006].map((spacing) => ({
+      geometry, dx, dy, spacing,
+      score: heroGeometryEdgeScore(pixels, createGeometryRects(geometry, layout, panel, dx, dy, spacing)),
+    })))),
+  )
+  const best = [...candidates].sort((left, right) => right.score - left.score)[0] ?? { geometry: 'inset' as const, dx: 0, dy: 0, spacing: 1, score: 0 }
+  const baselines = candidates.filter((candidate) => candidate.dx === 0 && candidate.dy === 0 && candidate.spacing === 1)
+  const baseline = [...baselines].sort((left, right) => right.score - left.score)[0] ?? best
+  return { score: best.score, baselineScore: baseline.score, best }
+}
+
+export const analyzeHeroSubcards = async (source: HTMLCanvasElement, preflight: ScreenshotPreflight): Promise<AnalyzedHeroColumn[]> => {
   const equipmentObservations = [...templates.equipmentObservations as HeroObservation[], ...officialEquipmentObservations]
   const petObservations = templates.petObservations as HeroObservation[]
   const modeObservations = templates.modeObservations as HeroObservation[]
-  const geometryRects = (geometry: keyof typeof geometryX, dx = 0, dy = 0, spacing = 1) => {
-    const base = preflight.layout === 'attack'
-      ? equipmentRectsByGeometry[geometry]
-      : geometryX[geometry].map((x) => [x, 970, 90, 90] as const)
-    const anchor = base[0][0]
-    return base.map(([x, y, width, height]) => projectRectToPanel(
-      panelRect(anchor + (x - anchor) * spacing + dx, y + dy, width, height), preflight.panel,
-    ))
-  }
+  const geometryRects = (geometry: keyof typeof geometryX, dx = 0, dy = 0, spacing = 1) => createGeometryRects(geometry, preflight.layout, preflight.panel, dx, dy, spacing)
   // Older samples contain two small edge-inset variants. Select by the actual
   // equipment-card evidence, never by device name, resolution or aspect ratio.
   const sourcePixels = source.getContext('2d', { willReadFrequently: true })?.getImageData(0, 0, source.width, source.height)
@@ -139,30 +178,127 @@ export const analyzeHeroSubcards = (source: HTMLCanvasElement, preflight: Screen
   const baselineBest = finalists.filter((candidate) => candidate.dx === 0 && candidate.dy === 0 && candidate.spacing === 1)
     .sort((left, right) => (right.templateScore ?? 0) - (left.templateScore ?? 0))[0]
   const challenger = finalists.sort((left, right) => ((right.templateScore ?? 0) * .8 + right.edgeScore * .2) - ((left.templateScore ?? 0) * .8 + left.edgeScore * .2))[0]
-  // Keep local registration in shadow mode for the same reason as panel
-  // registration: existing equipment/pet template scores are not strong enough
-  // to move crop geometry without stronger hero-region structure consistency.
-  // The army-card ONNX model never participates in hero subcard recognition.
-  const selectedGeometry = baselineBest
+  const templatePairsFor = (candidate: HeroGeometryCandidate | undefined) => candidate
+    ? resolveHeroEquipmentGlobally(Array.from({ length: 4 }, (_, index) => candidate.rects
+      .slice(index * 2, index * 2 + 2)
+      .map((rect) => rank(source, rect, equipmentObservations, (item) => item.id ?? -1, 8, preflight.layout))))
+    : []
+  const baselinePairs = templatePairsFor(baselineBest)
+  const challengerPairs = templatePairsFor(challenger)
+  const pairIdentity = (pairs: ReturnType<typeof resolveHeroEquipmentGlobally>) => pairs
+    .map((pair) => `${pair.heroId ?? '?'}:${pair.selectedIds.map((id) => id ?? '?').join('_')}`)
+    .join('|')
+  const pairStable = pairIdentity(baselinePairs) === pairIdentity(challengerPairs)
+  // Apply a local registration only when both independent structure and
+  // template evidence improve. A single template match is not allowed to move
+  // all eight equipment slots, and the proposed geometry must preserve the
+  // four-column semantic assignment.
+  const geometryGain = challenger.edgeScore - (baselineBest?.edgeScore ?? 0)
+  const templateGain = (challenger.templateScore ?? 0) - (baselineBest?.templateScore ?? 0)
+  const shouldRegister = Boolean(baselineBest && challenger
+    && geometryGain >= .035
+    && templateGain >= -.045
+    && pairStable)
+  const selectedGeometry = shouldRegister ? challenger : baselineBest
+  if (!selectedGeometry) return []
   const geometry = selectedGeometry.geometry
   const firstX = geometryX[geometry][0]
   const xPositions = geometryX[geometry].map((x) => firstX + (x - firstX) * selectedGeometry.spacing + selectedGeometry.dx)
   const allEquipmentRects = selectedGeometry.rects
-  return Array.from({ length: 4 }, (_, index) => {
+  const columns = await Promise.all(Array.from({ length: 4 }, async (_, index) => {
     const equipmentRects = allEquipmentRects.slice(index * 2, index * 2 + 2)
     const petPanelRect = panelRect(xPositions[index * 2], 858 + selectedGeometry.dy, xPositions[index * 2 + 1] + 90 - xPositions[index * 2], 100)
     const petRect = projectRectToPanel(petPanelRect, preflight.panel)
-    const rawEquipmentCandidates = equipmentRects.map((rect) => rank(source, rect, equipmentObservations, (item) => item.id ?? -1, 8, preflight.layout))
-    const resolvedEquipmentCandidates = resolveEquipmentPairCandidates(rawEquipmentCandidates)
-    const equipment = equipmentRects.map((rect, equipmentIndex) => ({ rect, candidates: resolvedEquipmentCandidates[equipmentIndex] }))
+    const templateEquipmentCandidates = equipmentRects.map((rect) => rank(source, rect, equipmentObservations, (item) => item.id ?? -1, 8, preflight.layout))
+    const equipmentRecognition: EquipmentRecognitionDiagnostic[] = []
+    const equipmentModelErrors: string[] = []
+    const modelEquipmentCandidates: HeroVisualCandidate[][] = equipmentRects.map(() => [])
+    const modelUnvalidatedEquipmentIds = new Set<number>()
+    const rawEquipmentCandidates = await Promise.all(equipmentRects.map(async (rect, equipmentIndex) => {
+      const templateCandidates = templateEquipmentCandidates[equipmentIndex]
+      const baseDiagnostic: EquipmentRecognitionDiagnostic = {
+        source: 'template', inputRect: rect,
+        templateTopCandidates: templateCandidates.map(({ id, score }) => ({ id, score })),
+      }
+      if (recognitionSettings.equipmentClassifier === 'template') {
+        equipmentRecognition[equipmentIndex] = baseDiagnostic
+        return templateCandidates
+      }
+      try {
+        const modelResult = await classifyEquipment(source, rect, 8)
+        const modelCandidates = modelResult.candidates
+        modelEquipmentCandidates[equipmentIndex] = modelCandidates
+        modelResult.manifest.evaluation?.realReferenceMissingEquipmentIds?.forEach((id) => modelUnvalidatedEquipmentIds.add(id))
+        const templateTop = templateCandidates[0]
+        const modelTop = modelCandidates[0]
+        const modelOwner = modelTop ? equipmentOwnerById.get(modelTop.id) : undefined
+        const templateOwner = templateTop ? equipmentOwnerById.get(templateTop.id) : undefined
+        const diagnostic: EquipmentRecognitionDiagnostic = {
+          ...baseDiagnostic,
+          source: recognitionSettings.equipmentClassifier === 'shadow' ? 'template' : 'onnx',
+          modelVersion: modelResult.manifest.modelVersion,
+          preprocessingVersion: modelResult.manifest.preprocessingVersion,
+          modelTopCandidates: modelCandidates.map(({ id, score }) => ({ id, score })),
+          agreement: modelTop?.id === templateTop?.id,
+          ownerAgreement: modelOwner !== undefined && modelOwner === templateOwner,
+          scoreDelta: (modelTop?.score ?? 0) - (templateTop?.score ?? 0),
+        }
+        equipmentRecognition[equipmentIndex] = diagnostic
+        return recognitionSettings.equipmentClassifier === 'shadow' ? templateCandidates : modelCandidates
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error)
+        equipmentModelErrors.push(`equipment-model-fallback:${equipmentIndex}:${message}`)
+        equipmentRecognition[equipmentIndex] = baseDiagnostic
+        return templateCandidates
+      }
+    }))
     const petCandidates = rank(source, petRect, petObservations, (item) => item.id ?? -1, 3, preflight.layout)
-    const owners = equipment.map((item) => equipmentOwnerById.get(item.candidates[0]?.id)).filter((owner) => owner !== undefined)
-    const heroId = owners.length === 2 && owners[0] === owners[1] ? owners[0] : undefined
-    const petId = recognizedPetId(petCandidates)
+    return { index, equipmentRects, rawEquipmentCandidates, modelEquipmentCandidates, modelUnvalidatedEquipmentIds, templateEquipmentCandidates, equipmentRecognition, equipmentModelErrors, petRect, petCandidates }
+  }))
+  const modelEquipmentResolutions = resolveHeroEquipmentGlobally(columns.map((column) =>
+    column.modelEquipmentCandidates.every((candidates) => candidates.length > 0)
+      ? column.modelEquipmentCandidates
+      : column.rawEquipmentCandidates,
+  ))
+  const templateEquipmentResolutions = resolveHeroEquipmentGlobally(columns.map((column) => column.templateEquipmentCandidates))
+  const petResolutions = resolveUniqueVisualCandidates(columns.map((column) => column.petCandidates))
+  return columns.map((column, index) => {
+    const modelResolution = modelEquipmentResolutions[index]
+    const templateResolution = templateEquipmentResolutions[index]
+    const modelPairDiffers = modelResolution.selectedIds.some((id, equipmentIndex) => id !== templateResolution.selectedIds[equipmentIndex])
+    const modelUsesUnvalidatedClass = modelResolution.selectedIds.some((id) => id !== undefined && column.modelUnvalidatedEquipmentIds.has(id))
+    const useTemplateFallback = recognitionSettings.equipmentClassifier === 'onnx'
+      && templateResolution.heroId !== undefined
+      && (modelResolution.heroId === undefined || modelResolution.heroId !== templateResolution.heroId
+        || (modelPairDiffers && modelUsesUnvalidatedClass))
+    const useTemplateCandidates = recognitionSettings.equipmentClassifier !== 'onnx' || useTemplateFallback
+    const equipmentResolution = useTemplateCandidates ? templateResolution : modelResolution
+    const petResolution = petResolutions[index]
+    const selectedIds = equipmentResolution.selectedIds
+    const sourceCandidates = useTemplateCandidates ? column.templateEquipmentCandidates : column.rawEquipmentCandidates
+    const prioritize = (candidates: HeroVisualCandidate[], selectedId: number | undefined) => selectedId === undefined
+      ? candidates
+      : [candidates.find((candidate) => candidate.id === selectedId)!, ...candidates.filter((candidate) => candidate.id !== selectedId)]
+    const equipment = column.equipmentRects.map((rect, equipmentIndex) => ({
+      rect,
+      candidates: prioritize(sourceCandidates[equipmentIndex], selectedIds[equipmentIndex]),
+      recognition: column.equipmentRecognition[equipmentIndex]
+        ? { ...column.equipmentRecognition[equipmentIndex], source: useTemplateFallback ? 'template' as const : column.equipmentRecognition[equipmentIndex].source }
+        : undefined,
+    }))
+    const heroId = equipmentResolution.heroId
+    const petId = petResolution.selectedId
     const diagnostics = [
       `selected-geometry:${selectedGeometry.geometry}`,
+      ...(shouldRegister ? [`local-geometry-registered:${selectedGeometry.dx},${selectedGeometry.dy},${selectedGeometry.spacing}`] : ['local-geometry-baseline']),
+      ...equipmentResolution.diagnostics,
+      ...(useTemplateFallback ? ['onnx-owner-conflict-template-fallback'] : []),
+      ...(useTemplateFallback && modelUsesUnvalidatedClass ? ['onnx-unvalidated-class-template-fallback'] : []),
+      ...petResolution.diagnostics,
+      ...column.equipmentModelErrors,
       ...(heroId === undefined ? ['equipment-owner-conflict'] : []),
       ...(petId === undefined ? ['low-pet-recognition-score'] : []),
+      ...(challenger !== baselineBest && !pairStable ? ['local-geometry-rejected:pair-instability'] : []),
       ...(challenger !== baselineBest ? [`shared-geometry-candidate:${challenger.dx},${challenger.dy},${challenger.spacing},${challenger.edgeScore.toFixed(3)}`] : []),
     ]
     const result: AnalyzedHeroColumn = {
@@ -170,8 +306,10 @@ export const analyzeHeroSubcards = (source: HTMLCanvasElement, preflight: Screen
       ...(heroId === undefined ? {} : { heroId }),
       geometryScore: selectedGeometry.edgeScore,
       diagnostics,
+      equipmentResolution: equipmentResolution.status,
+      equipmentResolutionGap: equipmentResolution.gap,
       equipment,
-      pet: { rect: petRect, candidates: petCandidates, ...(petId === undefined ? {} : { recognizedId: petId }) },
+      pet: { rect: column.petRect, candidates: prioritize(column.petCandidates, petId), ...(petId === undefined ? {} : { recognizedId: petId }), resolution: petResolution.status },
     }
     if (heroId === 2) {
       const modeRect = projectRectToPanel(panelRect(xPositions[index * 2 + 1] + 28, 263 + selectedGeometry.dy, 52, 48), preflight.panel)

@@ -1,13 +1,19 @@
 import Dexie, { type EntityTable } from 'dexie'
 import type { ArmyRecord } from '../domain/types'
+import type { SampleQueueRow } from '../recognition/sampleCollection'
 
 export class ArmyDatabase extends Dexie {
   armies!: EntityTable<ArmyRecord, 'id'>
+  sampleQueue!: EntityTable<SampleQueueRow, 'sha256'>
 
   constructor(name = 'coc-army-assistant') {
     super(name)
     this.version(1).stores({
       armies: 'id, name, scenario, createdAt, updatedAt, *tags',
+    })
+    this.version(2).stores({
+      armies: 'id, name, scenario, createdAt, updatedAt, *tags',
+      sampleQueue: 'sha256, createdAt, status',
     })
   }
 }

@@ -31,6 +31,7 @@ export interface PanelCandidateDiagnostic {
   geometryScore: number
   anchorEvidence: PanelAnchorEvidence[]
   cardStructureScore?: number
+  heroStructureScore?: number
   consistencyScore?: number
   totalScore?: number
 }
@@ -84,6 +85,8 @@ export interface RecognizedCard {
   ignoreLevel: true
   issue?: string
   issueKind?: CardUnresolvedKind
+  // 手动添加的卡片：没有真实截图矩形，覆盖层跳过渲染、“定位原图”不可用。
+  manual?: true
 }
 
 export interface ModeEvidence {
@@ -95,6 +98,9 @@ export interface ModeEvidence {
 export type HeroUnresolvedKind =
   | 'incomplete-equipment'
   | 'equipment-conflict'
+  | 'duplicate-equipment'
+  | 'duplicate-hero'
+  | 'duplicate-pet'
   | 'missing-pet'
   | 'low-confidence-pet'
   | 'missing-mode'
@@ -111,9 +117,22 @@ export interface RecognizedHeroLoadout {
 
 export interface HeroItemEvidence {
   rect: NormalizedRect
-  candidates: Array<{ id: number, score: number }>
+  candidates: Array<{ id: number, score: number, source?: 'onnx' | 'template' }>
   selectedId?: number
   score: number
+  recognition?: EquipmentRecognitionDiagnostic
+}
+
+export interface EquipmentRecognitionDiagnostic {
+  source: 'onnx' | 'template'
+  modelVersion?: string
+  preprocessingVersion?: string
+  inputRect: NormalizedRect
+  templateTopCandidates?: Array<{ id: number, score: number }>
+  modelTopCandidates?: Array<{ id: number, score: number }>
+  agreement?: boolean
+  ownerAgreement?: boolean
+  scoreDelta?: number
 }
 
 export interface RecognizedHeroSlot {

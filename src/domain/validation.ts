@@ -32,6 +32,26 @@ const addCapacityIssue = (issues: ValidationIssue[], key: keyof CapacitySummary,
   if (actual !== expected) issues.push({ code: `capacity.${key}`, message: `${label}需要达到 ${expected}，当前为 ${actual}` })
 }
 
+// 容器条件：截图识别页回传样本前的容量闸门。只要求四个容量容器
+// （主军队、主法术、援军兵种、援军法术）恰好填满；攻城机器在游戏里
+// 允许不满编（如城堡 0~2 台），因此只做上限检查，不要求精确等于上限。
+// 编辑器导出链接仍走完整 validateComposition。
+export const checkContainerConditions = (composition: ArmyComposition): ValidationResult => {
+  const capacities = calculateCapacities(composition)
+  const issues: ValidationIssue[] = []
+  addCapacityIssue(issues, 'army', capacities.army, LIMITS.army, '主军队容量')
+  addCapacityIssue(issues, 'spells', capacities.spells, LIMITS.spells, '主法术容量')
+  addCapacityIssue(issues, 'clanCastleTroops', capacities.clanCastleTroops, LIMITS.clanCastleTroops, '援军兵种容量')
+  addCapacityIssue(issues, 'clanCastleSpells', capacities.clanCastleSpells, LIMITS.clanCastleSpells, '援军法术容量')
+  if (capacities.siegeMachines > LIMITS.siegeMachines) {
+    issues.push({ code: 'capacity.siegeMachines', message: `自带攻城机器不能超过 ${LIMITS.siegeMachines}，当前为 ${capacities.siegeMachines}` })
+  }
+  if (capacities.clanCastleSiegeMachines > LIMITS.clanCastleSiegeMachines) {
+    issues.push({ code: 'capacity.clanCastleSiegeMachines', message: `援军攻城机器不能超过 ${LIMITS.clanCastleSiegeMachines}，当前为 ${capacities.clanCastleSiegeMachines}` })
+  }
+  return { valid: issues.length === 0, capacities, issues }
+}
+
 export const validateComposition = (composition: ArmyComposition): ValidationResult => {
   const capacities = calculateCapacities(composition)
   const issues: ValidationIssue[] = []

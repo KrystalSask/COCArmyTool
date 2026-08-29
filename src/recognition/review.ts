@@ -12,30 +12,72 @@ const mergeEntries = (cards: RecognizedCard[]): CountEntry[] => {
 }
 
 export const compositionFromRecognition = (result: ScreenshotRecognitionResult): ArmyComposition => ({
-  heroes: result.heroes
+  heroes: (() => {
+    const usedHeroes = new Set<number>()
+    const usedPets = new Set<number>()
+    return result.heroes
     // 不完整的英雄列只留在审查证据中，绝不进入最终配兵。
     .filter((hero) => hero.loadout.heroId !== undefined && hero.loadout.petId !== undefined
       && hero.loadout.equipmentIds.length === 2 && hero.loadout.equipmentIds.every((id) => id !== undefined))
+    .filter((hero) => {
+      const heroId = hero.loadout.heroId as number
+      const petId = hero.loadout.petId as number
+      if (usedHeroes.has(heroId) || usedPets.has(petId)) return false
+      usedHeroes.add(heroId)
+      usedPets.add(petId)
+      return true
+    })
     .map((hero) => ({
       heroId: hero.loadout.heroId as number,
       ...(hero.loadout.mode === undefined ? {} : { mode: hero.loadout.mode }),
       petId: hero.loadout.petId as number,
       equipmentIds: hero.loadout.equipmentIds as number[],
-    })),
+    }))
+  })(),
   troops: mergeEntries(result.cards.filter((card) => card.region === 'mainTroops' || card.region === 'mainSiege')),
   spells: mergeEntries(result.cards.filter((card) => card.region === 'mainSpells')),
   clanCastleTroops: mergeEntries(result.cards.filter((card) => card.region === 'castleArmy' && card.selectedKind !== 'spell')),
   clanCastleSpells: mergeEntries(result.cards.filter((card) => card.region === 'castleArmy' && card.selectedKind === 'spell')),
 })
 
-export const buildRecognitionReview = (result: ScreenshotRecognitionResult): RecognitionReview => ({
-  result,
-  composition: compositionFromRecognition(result),
+const withUniqueHeroConflicts = (result: ScreenshotRecognitionResult): ScreenshotRecognitionResult => {
+  const heroesById = new Map<number, string[]>()
+  const petsById = new Map<number, string[]>()
+  result.heroes.forEach((hero) => {
+    if (hero.loadout.heroId !== undefined) heroesById.set(hero.loadout.heroId, [...(heroesById.get(hero.loadout.heroId) ?? []), hero.key])
+    if (hero.loadout.petId !== undefined) petsById.set(hero.loadout.petId, [...(petsById.get(hero.loadout.petId) ?? []), hero.key])
+  })
+  return {
+    ...result,
+    heroes: result.heroes.map((hero) => {
+      const duplicateHero = hero.loadout.heroId !== undefined && (heroesById.get(hero.loadout.heroId)?.length ?? 0) > 1
+      const duplicatePet = hero.loadout.petId !== undefined && (petsById.get(hero.loadout.petId)?.length ?? 0) > 1
+      if (!duplicateHero && !duplicatePet) return hero
+      const conflictingKeys = [
+        ...(duplicateHero ? [`英雄与 ${heroesById.get(hero.loadout.heroId!)!.filter((key) => key !== hero.key).join('、')} 重复`] : []),
+        ...(duplicatePet ? [`战宠与 ${petsById.get(hero.loadout.petId!)!.filter((key) => key !== hero.key).join('、')} 重复`] : []),
+      ]
+      return {
+        ...hero,
+        confirmed: false,
+        issueKind: duplicateHero ? 'duplicate-hero' : 'duplicate-pet',
+        issue: `${conflictingKeys.join('；')}，需要人工调整。`,
+      }
+    }),
+  }
+}
+
+export const buildRecognitionReview = (result: ScreenshotRecognitionResult): RecognitionReview => {
+  const normalizedResult = withUniqueHeroConflicts(result)
+  return {
+  result: normalizedResult,
+  composition: compositionFromRecognition(normalizedResult),
   unresolvedKeys: [
-    ...result.cards.filter((card) => !card.confirmed || Boolean(card.issue)).map((card) => card.key),
-    ...result.heroes.filter((hero) => !hero.confirmed || Boolean(hero.issue)).map((hero) => hero.key),
+    ...normalizedResult.cards.filter((card) => !card.confirmed || Boolean(card.issue)).map((card) => card.key),
+    ...normalizedResult.heroes.filter((hero) => !hero.confirmed || Boolean(hero.issue)).map((hero) => hero.key),
   ],
-})
+  }
+}
 
 export const updateRecognizedCard = (result: ScreenshotRecognitionResult, key: string, update: Partial<Pick<RecognizedCard, 'selectedId' | 'selectedKind' | 'count' | 'confirmed' | 'issue' | 'issueKind'>>): ScreenshotRecognitionResult => ({
   ...result,
@@ -131,6 +173,9 @@ export const heroUnresolvedFromEvidence = (
       issue: '有装备未能识别；请为每件装备选择一项。',
     }
   }
+  if (equipmentIds.length === 2 && new Set(equipmentIds).size !== equipmentIds.length) {
+    return { issueKind: 'duplicate-equipment', issue: '两件装备不能重复，请选择不同装备。' }
+  }
   if (heroId === undefined) {
     return { issueKind: 'equipment-conflict', issue: '两件装备属于不同英雄，需要人工确认英雄归属。' }
   }
@@ -147,12 +192,20 @@ export const heroUnresolvedFromEvidence = (
 }
 
 export const canConfirmAllCandidates = (result: ScreenshotRecognitionResult) => result.cards.length > 0
-  && result.cards.every((card) => card.count !== undefined)
+  // 数量缺失不再阻塞批量确认（补填数量时逐卡自动确认）；低置信度卡片
+  // 仍必须逐卡人工核对，防止低质量 OCR 直接进入批量确认与训练样本。
+  // 注意：本闸门必须始终严于 confirmAllCandidates 的确认动作——
+  // 低置信度卡不允许被批量确认绕过。
+  && result.cards.every((card) => card.confidence >= .75)
   && result.heroes.length === 4
   && result.heroes.every((hero) => hero.loadout.petId !== undefined
     && hero.loadout.equipmentIds.length === 2
+    && new Set(hero.loadout.equipmentIds).size === 2
     && hero.loadout.equipmentIds.every((id) => id !== undefined)
+    && hero.loadout.heroId !== undefined
     && (hero.loadout.heroId !== WARDEN_ID || hero.loadout.mode !== undefined))
+  && new Set(result.heroes.map((hero) => hero.loadout.heroId)).size === result.heroes.length
+  && new Set(result.heroes.map((hero) => hero.loadout.petId)).size === result.heroes.length
 
 // 只确认证据完整的项目；不完整英雄列保持未解决并留在审查中。
 export const confirmAllCandidates = (result: ScreenshotRecognitionResult): ScreenshotRecognitionResult => ({
@@ -163,6 +216,7 @@ export const confirmAllCandidates = (result: ScreenshotRecognitionResult): Scree
   heroes: result.heroes.map((hero) => {
     const complete = hero.loadout.heroId !== undefined && hero.loadout.petId !== undefined
       && hero.loadout.equipmentIds.length === 2 && hero.loadout.equipmentIds.every((id) => id !== undefined)
+      && new Set(hero.loadout.equipmentIds).size === 2
       && (hero.loadout.heroId !== WARDEN_ID || hero.loadout.mode !== undefined)
     return complete
       ? { ...hero, confirmed: true, issue: undefined, issueKind: undefined, mode: { ...hero.mode, confirmed: true } }
@@ -171,3 +225,41 @@ export const confirmAllCandidates = (result: ScreenshotRecognitionResult): Scree
 })
 
 export const confirmAllMockCandidates = confirmAllCandidates
+
+// 手动增删卡片：类别识别错误时人工校正。增删只改 result.cards，
+// 配兵合成（compositionFromRecognition）与容量校验按 cards 自动重建。
+
+export const removeRecognizedCard = (result: ScreenshotRecognitionResult, key: string): ScreenshotRecognitionResult => ({
+  ...result,
+  cards: result.cards.filter((card) => card.key !== key),
+})
+
+export interface ManualCardInput {
+  region: RecognizedCard['region']
+  selectedKind: RecognizedCard['selectedKind']
+  selectedId: number
+  count?: number
+}
+
+// 手动卡没有真实截图矩形（rect 用零值占位，覆盖层按 manual 跳过渲染）；
+// 无 OCR 候选，置信度视为人工可信。填了数量即确认，否则进入待填列表。
+let manualCardSeq = 0
+
+export const addRecognizedCard = (result: ScreenshotRecognitionResult, input: ManualCardInput): ScreenshotRecognitionResult => ({
+  ...result,
+  cards: [...result.cards, {
+    key: `manual-${Date.now().toString(36)}-${manualCardSeq++}`,
+    region: input.region,
+    rect: { x: .5, y: .5, width: 0, height: 0 },
+    selectedId: input.selectedId,
+    selectedKind: input.selectedKind,
+    ...(input.count === undefined ? {} : { count: input.count }),
+    itemCandidates: [],
+    countCandidates: [],
+    confidence: 1,
+    confirmed: input.count !== undefined,
+    ignoreLevel: true,
+    ...(input.count === undefined ? { issue: '请填写有效数量后确认。', issueKind: 'missing-count' as const } : {}),
+    manual: true,
+  }],
+})

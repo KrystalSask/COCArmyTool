@@ -6,10 +6,10 @@ import { computeDifferenceHash, getIconCandidates, hammingDistance, iconFeatureM
 import { detectCardSlots } from './cardDetector'
 import { createMockRecognitionResult } from './mockEngine'
 import { inspectDimensions } from './preflight'
-import { buildRecognitionReview, confirmAllCandidates, confirmAllMockCandidates, heroEquipmentKey, heroPetKey, updateRecognizedCard, updateRecognizedHeroEquipment, updateRecognizedHeroPet } from './review'
+import { buildRecognitionReview, canConfirmAllCandidates, confirmAllCandidates, confirmAllMockCandidates, heroEquipmentKey, heroPetKey, updateRecognizedCard, updateRecognizedHeroEquipment, updateRecognizedHeroPet } from './review'
 import { createVisualRecognitionResult } from './visualEngine'
 import type { AnalyzedHeroColumn } from './heroSubcardAnalysis'
-import type { ScreenshotPreflight } from './types'
+import type { ScreenshotPreflight, ScreenshotRecognitionResult } from './types'
 
 const preflight: ScreenshotPreflight = {
   fileName: '001.png', mimeType: 'image/png', width: 2048, height: 1024, aspectRatio: 2,
@@ -222,5 +222,21 @@ describe('英雄证据保留与未解决原因', () => {
     const result = incompleteResult()
     expect(result.heroes[0].equipment?.map((_item, index) => `${result.heroes[0].key}-equipment-${index}`)).toEqual(['hero-0-equipment-0', 'hero-0-equipment-1'])
     expect(`${result.heroes[0].key}-pet`).toBe(heroPetKey('hero-0'))
+  })
+
+  it('识别层直接标记重复英雄或战宠，批量确认不能绕过唯一性', () => {
+    const result = incompleteResult()
+    const duplicated: ScreenshotRecognitionResult = {
+      ...result,
+      heroes: result.heroes.map((hero, index) => index === 1
+        ? { ...hero, loadout: { ...hero.loadout, heroId: 7, petId: 16, equipmentIds: [52, 57] } }
+        : hero),
+    }
+    const review = buildRecognitionReview(duplicated)
+    expect(review.result.heroes[0].issueKind).toBe('duplicate-hero')
+    expect(review.result.heroes[1].issueKind).toBe('duplicate-hero')
+    expect(review.unresolvedKeys).toEqual(expect.arrayContaining(['hero-0', 'hero-1']))
+    expect(canConfirmAllCandidates(duplicated)).toBe(false)
+    expect(review.composition.heroes).toHaveLength(1)
   })
 })

@@ -12,7 +12,7 @@
 
 正式发布产物是 Windows x64 便携 ZIP，不是安装程序：
 
-- 文件名：`release/COCArmyTool-v<版本>-windows-x64-portable.zip`（当前为 `COCArmyTool-v0.2.0-windows-x64-portable.zip`）。
+- 文件名：`release/COCArmyTool-v<版本>-windows-x64-portable.zip`（当前为 `COCArmyTool-v0.3.0-windows-x64-portable.zip`）。
 - 内容：`COCArmyTool.exe` 和简体中文 `使用说明.txt`，解压后双击 EXE 即可运行。
 - 免安装：不写安装列表、不产生卸载入口；也不要求电脑安装 Node.js、Rust 或 Vite。
 - 环境要求：Windows 10/11 64 位（x64），并已安装 Microsoft Edge WebView2 运行时（Windows 11 通常自带）。
@@ -53,6 +53,7 @@
 | `npm start` | 默认启动桌面开发版 |
 | `npm run launcher` | 使用跨平台 Node.js 交互菜单 |
 | `npm run release:portable` | 直接执行便携版打包脚本 |
+| `启动开发测试版.cmd` | Windows 双击启动当前工作区桌面开发版 |
 
 这些脚本用于开发、测试和构建，不是普通用户的应用启动入口。最终用户只拿到便携 ZIP 中的 `COCArmyTool.exe`。所有入口最终调用 `package.json` 中的标准脚本，避免文档、人工命令和 CI 使用不同流程。
 
@@ -63,7 +64,7 @@
 - 使用本地真实游戏图标展示和编辑军队配置。
 - 通过 IndexedDB 在本机保存、编辑、备份和恢复方案，无账号、后端或云同步。
 - 内置人工核验的近期配兵快照，并保留作者、来源和有效期。
-- 在浏览器或桌面端本地处理完整横屏截图，提供 Top-3 候选和人工确认流程。
+- 在浏览器或桌面端本地处理完整横屏截图，提供 Top-3 候选和人工确认流程；web 端在全部确认且容量容器填满后自动回传识别样本（截图、修正结果与配兵链接，用于改进模型），桌面端不进行任何收集。
 - 对识别结果设置安全门槛；未确认或不完整配置不能直接复制链接。
 - 支持 PWA 离线缓存，也可构建 Tauri Windows 桌面便携版（免安装 EXE 压缩包）。
 
@@ -90,7 +91,7 @@
 3. 人工确认所有项目，并补齐无法可靠识别的内容。
 4. 容量、英雄规则和链接回环全部通过后再导出。
 
-识别只在本机执行，不上传截图。当前承诺范围和限制见[截图识别说明](docs/screenshot-recognition.md)。
+识别在本机执行。web 端在“一键确认全部”且容器条件（主军队/法术/援军容量精确填满）通过时，自动把本次截图原图（超限时按原分辨率转码）、机器候选、人工修正结果与配兵链接上传到作者服务器，仅用于改进识别模型；桌面版（Tauri）不含任何数据收集。回传直接写入作者的腾讯云 COS。当前承诺范围和限制见[截图识别说明](docs/screenshot-recognition.md)。
 
 ## 项目结构
 
@@ -138,7 +139,7 @@ npm run desktop:dev
 npm run release:portable
 ```
 
-产物：`release/COCArmyTool-v0.2.0-windows-x64-portable.zip`。详细流程、产物结构和验证要求见 [便携版发布](docs/PORTABLE_RELEASE.md)。
+产物：`release/COCArmyTool-v0.3.0-windows-x64-portable.zip`。详细流程、产物结构和验证要求见 [便携版发布](docs/PORTABLE_RELEASE.md)。
 
 备用：`npm run desktop:build` 仍可生成 NSIS 安装包（`src-tauri/target/release/bundle/`），仅用于内部试用，不是对外发布产物。
 

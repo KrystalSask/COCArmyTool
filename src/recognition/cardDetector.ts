@@ -31,6 +31,9 @@ export interface DetectedCardSlot extends GeometricCardSlot {
   candidates?: CardClassCandidate[]
   classification?: {
     candidates: CardClassCandidate[]
+    /** Independent legacy evidence kept for narrow, explainable corrections. */
+    shadowCandidates?: CardClassCandidate[]
+    resolvedBy?: 'shadow-template'
     source: 'onnx' | 'legacy-template'
     modelVersion: string
     preprocessingVersion: string
@@ -319,6 +322,32 @@ export const detectCardSlots = (image: PixelBuffer, region: NormalizedRect, opti
     while (options.trimTrailingFrameless && scored.length > 1 && scored[scored.length - 1].frameRatio < .04) scored.pop()
     return scored.map(({ slot }) => slot)
   }
+  const frameComponentSlots = () => {
+    const columnHits = new Int32Array(width)
+    for (let localX = 0; localX < width; localX += 1) for (let localY = 0; localY < fullHeight; localY += 2) {
+      const offset = ((top + localY) * image.width + left + localX) * 4
+      const red = image.data[offset]
+      const green = image.data[offset + 1]
+      const blue = image.data[offset + 2]
+      if (blue > 105 && (blue > red * 1.08 || blue > green * 1.20)) columnHits[localX] += 1
+    }
+    const groups: Array<{ left: number, right: number }> = []
+    let groupStart = -1
+    const threshold = fullHeight * .08
+    for (let x = 0; x <= width; x += 1) {
+      const active = x < width && columnHits[x] >= threshold
+      if (active && groupStart < 0) groupStart = x
+      if (!active && groupStart >= 0) {
+        if (x - groupStart >= 35 * scale) groups.push({ left: groupStart, right: x })
+        groupStart = -1
+      }
+    }
+    return groups.filter((group) => group.right - group.left <= 220 * scale).map((group) => ({
+      rect: { x: (left + Math.max(0, group.left - 5 * scale)) / image.width, y: top / image.height, width: Math.min(width - group.left, group.right - group.left + 10 * scale) / image.width, height: fullHeight / image.height },
+      badgeConfidence: .45,
+      geometry: { source: 'frame-components' as const, score: .45, inferred: true },
+    }))
+  }
   const whiteComponents = findWhiteGlyphComponents(image, { left, top, width, height })
   const glyphs = whiteComponents.filter((component) =>
     component.width >= 4 * scale && component.width <= 25 * scale
@@ -339,36 +368,31 @@ export const detectCardSlots = (image: PixelBuffer, region: NormalizedRect, opti
     if (!badges.length || glyph.x - badges[badges.length - 1].x >= 55 * scale) badges.push(glyph)
   }
   const edgeDetectedSlots = detectEdgeSlots(image, left, top, width, fullHeight, scale, badges.length === 1 ? badges[0].x : undefined)
+  const quantityEvidenceFor = (slot: DetectedCardSlot) => {
+    const slotLeft = slot.rect.x * image.width - left
+    const slotRight = (slot.rect.x + slot.rect.width) * image.width - left
+    return whiteComponents.some((component) => component.x >= slotLeft - 4 * scale
+      && component.x < slotRight + 4 * scale
+      && component.y < height * .92
+      && component.width >= 3 * scale
+      && component.height >= 8 * scale
+      && component.area >= 50 * scale * scale)
+  }
+  if (badges.length === 1 && edgeDetectedSlots.length > 1) {
+    // A single readable xN can anchor a sequence, but artwork seams may add
+    // empty trailing slots. Keep a trailing card only when its own quantity
+    // glyph is present; this trims false extensions without inventing a count.
+    const evidence = edgeDetectedSlots.map(quantityEvidenceFor)
+    const lastEvidence = evidence.reduce((last, present, index) => present ? index : last, -1)
+    if (lastEvidence >= 0 && lastEvidence < edgeDetectedSlots.length - 1) return finishStructuralSlots(edgeDetectedSlots.slice(0, lastEvidence + 1))
+  }
   // With zero or one readable quantity badge, spacing cannot be estimated from
   // text. Use the repeated vertical card structure as the primary detector.
   if (badges.length <= 1 && edgeDetectedSlots.length > badges.length) return finishStructuralSlots(edgeDetectedSlots)
   if (!badges.length) {
     // Compressed video frames may break the small white `xN` glyph into pieces.
     // Fall back to contiguous cyan/purple card-frame columns inside the known row.
-    const columnHits = new Int32Array(width)
-    for (let localX = 0; localX < width; localX += 1) for (let localY = 0; localY < fullHeight; localY += 2) {
-      const offset = ((top + localY) * image.width + left + localX) * 4
-      const red = image.data[offset]
-      const green = image.data[offset + 1]
-      const blue = image.data[offset + 2]
-      if (blue > 105 && (blue > red * 1.08 || blue > green * 1.20)) columnHits[localX] += 1
-    }
-    const groups: Array<{ left: number, right: number }> = []
-    let groupStart = -1
-    const threshold = fullHeight * .08
-    for (let x = 0; x <= width; x += 1) {
-      const active = x < width && columnHits[x] >= threshold
-      if (active && groupStart < 0) groupStart = x
-      if (!active && groupStart >= 0) {
-        if (x - groupStart >= 35 * scale) groups.push({ left: groupStart, right: x })
-        groupStart = -1
-      }
-    }
-    return finishStructuralSlots(groups.filter((group) => group.right - group.left <= 220 * scale).map((group) => ({
-      rect: { x: (left + Math.max(0, group.left - 5 * scale)) / image.width, y: top / image.height, width: Math.min(width - group.left, group.right - group.left + 10 * scale) / image.width, height: fullHeight / image.height },
-      badgeConfidence: .45,
-      geometry: { source: 'frame-components' as const, score: .45, inferred: true },
-    })))
+    return finishStructuralSlots(frameComponentSlots())
   }
   const gaps = badges.slice(1).map((badge, index) => badge.x - badges[index].x)
   const sortedGaps = [...gaps].sort((a, b) => a - b)

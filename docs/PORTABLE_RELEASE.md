@@ -21,16 +21,16 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/package-portable.ps1
 3. 暂存运行时交付物：`src-tauri/target/release/coc-army-tool.exe` 改名为 `COCArmyTool.exe`，连同 `使用说明.txt`（模板 `scripts/portable-readme-zh.txt`，自动填入版本号与日期）一起放入暂存目录。
 4. 压缩为 `release/COCArmyTool-v<版本>-windows-x64-portable.zip`，并校验 ZIP 只含上述两个条目。
 
-版本号只从 `src-tauri/tauri.conf.json` 的 `version` 读取（当前 `0.2.0`），不支持命令行覆盖，确保 ZIP 文件名、EXE 产品版本与项目元数据一致；打包前还会校验 EXE 的 PE 架构为 x64，任何不一致都直接失败。产物路径固定为：
+版本号只从 `src-tauri/tauri.conf.json` 的 `version` 读取（当前 `0.3.0`），不支持命令行覆盖，确保 ZIP 文件名、EXE 产品版本与项目元数据一致；打包前还会校验 EXE 的 PE 架构为 x64，任何不一致都直接失败。产物路径固定为：
 
 ```text
-release/COCArmyTool-v0.2.0-windows-x64-portable.zip
+release/COCArmyTool-v0.3.0-windows-x64-portable.zip
 ```
 
 ## 产物结构
 
 ```text
-COCArmyTool-v0.2.0-windows-x64-portable.zip
+COCArmyTool-v0.3.0-windows-x64-portable.zip
 ├── COCArmyTool.exe   用户启动入口（x64 release 二进制）
 └── 使用说明.txt       简体中文使用说明
 ```
@@ -67,7 +67,7 @@ npm run release:portable
 1. 解压到仓库外的临时目录（例如 `%TEMP%\cocarmytool-smoke`）。
 2. 确认目录内只有 `COCArmyTool.exe` 和 `使用说明.txt`。
 3. 双击（或从该目录启动）`COCArmyTool.exe`，窗口应正常出现；此时工作目录不是仓库，且不依赖 Node/Vite/Cargo。
-4. 验证 EXE 的版本信息为 0.2.0（`Get-Item .\COCArmyTool.exe | Select-Object VersionInfo`）。
+4. 验证 EXE 的版本信息为 0.3.0（`Get-Item .\COCArmyTool.exe | Select-Object VersionInfo`）。
 5. 关闭窗口，确认进程退出。
 
 ## 版本一致性

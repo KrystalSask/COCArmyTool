@@ -24,6 +24,10 @@ npm run desktop:dev
 .\start.ps1   # 打开任务菜单
 ```
 
+也可以直接双击项目根目录的 `启动开发测试版.cmd`。它等价于
+`.\start.ps1 desktop`，会启动当前工作区的桌面开发版并加载最新源码与模型；
+启动窗口会保留终端日志，便于验收时查看错误。
+
 `start.ps1` 只负责定位项目根目录并调用 `scripts/start.mjs`；实际任务始终来自 `package.json`。
 
 ## 热更新
@@ -48,4 +52,4 @@ npm run desktop:dev
 3. 运行 `npm run check` 检查开发环境。
 4. 查看 [常见故障](MAINTENANCE.md#10-常见故障) 一节。
 
-历史说明：早期根目录提供过“开发测试”双击入口（`.lnk`/`.vbs` 调用 `scripts/dev-launcher.ps1`）。该入口把开发版伪装成用户应用，已在 v0.2.0 移除；开发者统一使用上面的 CLI 入口，最终用户使用便携 ZIP。
+说明：`启动开发测试版.cmd` 仅用于开发和验收，最终用户仍应使用便携版发布包。

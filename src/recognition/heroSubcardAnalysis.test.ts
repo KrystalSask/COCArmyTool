@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { recognizedPetId, resolveEquipmentPairCandidates } from './heroSubcardAnalysis'
 import { officialEquipmentObservations } from './officialEquipmentTemplates'
+import { resolveHeroEquipmentGlobally, resolveUniqueVisualCandidates } from './heroInference'
 
 describe('resolveEquipmentPairCandidates', () => {
   it('rejects duplicate equipment and chooses the strongest legal same-hero pair', () => {
@@ -36,5 +37,29 @@ describe('recognizedPetId', () => {
 
   it('rejects an ambiguous empty-slot match', () => {
     expect(recognizedPetId([{ id: 9, score: .580 }, { id: 17, score: .578 }, { id: 16, score: .574 }])).toBeUndefined()
+  })
+})
+
+describe('全局英雄与战宠候选分配', () => {
+  it('四列联合选择时不重复使用同一英雄，无法合法分配时保留未知', () => {
+    const resolved = resolveHeroEquipmentGlobally([
+      [[{ id: 52, score: .91 }, { id: 57, score: .90 }], [{ id: 57, score: .92 }, { id: 52, score: .89 }]],
+      [[{ id: 52, score: .90 }, { id: 57, score: .89 }], [{ id: 57, score: .91 }, { id: 52, score: .88 }]],
+      [[{ id: 0, score: .88 }], [{ id: 1, score: .87 }]],
+    ])
+    expect(resolved[0].heroId).toBe(7)
+    expect(resolved[1].heroId).toBeUndefined()
+    expect(resolved[2].heroId).toBe(0)
+  })
+
+  it('战宠候选联合分配时避免重复，并保留低分列为未知', () => {
+    const resolved = resolveUniqueVisualCandidates([
+      [{ id: 9, score: .82 }, { id: 10, score: .59 }],
+      [{ id: 9, score: .81 }, { id: 11, score: .59 }],
+      [{ id: 12, score: .58 }],
+    ])
+    expect(resolved[0].selectedId).toBe(9)
+    expect(resolved[1].selectedId).toBeUndefined()
+    expect(resolved[2].selectedId).toBeUndefined()
   })
 })

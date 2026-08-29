@@ -60,6 +60,7 @@ export const createVisualRecognitionResult = (preflight: ScreenshotPreflight, an
       candidates: item.candidates,
       selectedId: item.candidates[0]?.id,
       score: item.candidates[0]?.score ?? 0,
+      recognition: item.recognition,
     }))
     const equipmentIds = equipment.map((item) => item.selectedId)
     const pet = {
@@ -75,6 +76,11 @@ export const createVisualRecognitionResult = (preflight: ScreenshotPreflight, an
     const petScore = pet.score
     const wardenModeDefined = heroId === WARDEN_ID ? modeCandidate !== undefined : true
     const unresolved = heroUnresolvedFromEvidence(heroId, equipmentIds, pet.selectedId, petScore, wardenModeDefined)
+    const petIsAmbiguous = pet.selectedId !== undefined
+      && (column.pet.resolution === 'ambiguous' || petScore < .68)
+    const resolvedIssue = petIsAmbiguous && unresolved.issueKind === 'unconfirmed'
+      ? { issueKind: 'low-confidence-pet' as const, issue: '战宠候选分数偏低，请核对并选择战宠。' }
+      : unresolved
     const confidence = Math.min(...equipmentScores, petScore, ...(heroId === WARDEN_ID ? [modeCandidate?.score ?? 0] : []))
     return {
       key: `hero-${column.index}`,
@@ -97,8 +103,8 @@ export const createVisualRecognitionResult = (preflight: ScreenshotPreflight, an
       confidence,
       confirmed: false,
       inference: inference.status === 'confirmed' ? 'equipment-owner' : inference.status,
-      issue: unresolved.issue,
-      issueKind: unresolved.issueKind,
+      issue: resolvedIssue.issue,
+      issueKind: resolvedIssue.issueKind,
     }
   })
   return {

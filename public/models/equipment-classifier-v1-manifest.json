@@ -1,0 +1,293 @@
+{
+  "schemaVersion": 1,
+  "modelId": "equipment-classifier-v1",
+  "modelVersion": "equipment-card-v1",
+  "modelFile": "equipment-classifier-v1.onnx",
+  "classesFile": "equipment-classifier-v1-classes.json",
+  "classCount": 42,
+  "input": {
+    "name": "images",
+    "width": 96,
+    "height": 96,
+    "layout": "NCHW",
+    "color": "RGB",
+    "normalization": "divide-255",
+    "resize": "letterbox-edge-color"
+  },
+  "output": {
+    "name": "output0",
+    "kind": "probabilities",
+    "shape": [
+      1,
+      42
+    ]
+  },
+  "preprocessingVersion": "equipment-card-96-letterbox-v1",
+  "sourceWeightsSha256": "1386af4b35e36281185cfc3b79f2b1c7351bfe831f97b3ef4a23a8505ae86998",
+  "onnxSha256": "55bfe6e17847a3aec5aad5c7743995c03d542f54dc46033c1f382e528692af95",
+  "classes": [
+    {
+      "modelIndex": 0,
+      "className": "equipment_0",
+      "equipmentId": 0,
+      "ownerHeroId": 0
+    },
+    {
+      "modelIndex": 1,
+      "className": "equipment_1",
+      "equipmentId": 1,
+      "ownerHeroId": 0
+    },
+    {
+      "modelIndex": 2,
+      "className": "equipment_10",
+      "equipmentId": 10,
+      "ownerHeroId": 0
+    },
+    {
+      "modelIndex": 3,
+      "className": "equipment_11",
+      "equipmentId": 11,
+      "ownerHeroId": 0
+    },
+    {
+      "modelIndex": 4,
+      "className": "equipment_12",
+      "equipmentId": 12,
+      "ownerHeroId": 4
+    },
+    {
+      "modelIndex": 5,
+      "className": "equipment_13",
+      "equipmentId": 13,
+      "ownerHeroId": 4
+    },
+    {
+      "modelIndex": 6,
+      "className": "equipment_14",
+      "equipmentId": 14,
+      "ownerHeroId": 0
+    },
+    {
+      "modelIndex": 7,
+      "className": "equipment_15",
+      "equipmentId": 15,
+      "ownerHeroId": 1
+    },
+    {
+      "modelIndex": 8,
+      "className": "equipment_16",
+      "equipmentId": 16,
+      "ownerHeroId": 1
+    },
+    {
+      "modelIndex": 9,
+      "className": "equipment_17",
+      "equipmentId": 17,
+      "ownerHeroId": 1
+    },
+    {
+      "modelIndex": 10,
+      "className": "equipment_19",
+      "equipmentId": 19,
+      "ownerHeroId": 2
+    },
+    {
+      "modelIndex": 11,
+      "className": "equipment_2",
+      "equipmentId": 2,
+      "ownerHeroId": 1
+    },
+    {
+      "modelIndex": 12,
+      "className": "equipment_20",
+      "equipmentId": 20,
+      "ownerHeroId": 1
+    },
+    {
+      "modelIndex": 13,
+      "className": "equipment_22",
+      "equipmentId": 22,
+      "ownerHeroId": 2
+    },
+    {
+      "modelIndex": 14,
+      "className": "equipment_24",
+      "equipmentId": 24,
+      "ownerHeroId": 2
+    },
+    {
+      "modelIndex": 15,
+      "className": "equipment_3",
+      "equipmentId": 3,
+      "ownerHeroId": 1
+    },
+    {
+      "modelIndex": 16,
+      "className": "equipment_32",
+      "equipmentId": 32,
+      "ownerHeroId": 0
+    },
+    {
+      "modelIndex": 17,
+      "className": "equipment_34",
+      "equipmentId": 34,
+      "ownerHeroId": 2
+    },
+    {
+      "modelIndex": 18,
+      "className": "equipment_35",
+      "equipmentId": 35,
+      "ownerHeroId": 6
+    },
+    {
+      "modelIndex": 19,
+      "className": "equipment_39",
+      "equipmentId": 39,
+      "ownerHeroId": 1
+    },
+    {
+      "modelIndex": 20,
+      "className": "equipment_4",
+      "equipmentId": 4,
+      "ownerHeroId": 2
+    },
+    {
+      "modelIndex": 21,
+      "className": "equipment_40",
+      "equipmentId": 40,
+      "ownerHeroId": 4
+    },
+    {
+      "modelIndex": 22,
+      "className": "equipment_41",
+      "equipmentId": 41,
+      "ownerHeroId": 2
+    },
+    {
+      "modelIndex": 23,
+      "className": "equipment_42",
+      "equipmentId": 42,
+      "ownerHeroId": 6
+    },
+    {
+      "modelIndex": 24,
+      "className": "equipment_43",
+      "equipmentId": 43,
+      "ownerHeroId": 6
+    },
+    {
+      "modelIndex": 25,
+      "className": "equipment_44",
+      "equipmentId": 44,
+      "ownerHeroId": 6
+    },
+    {
+      "modelIndex": 26,
+      "className": "equipment_47",
+      "equipmentId": 47,
+      "ownerHeroId": 6
+    },
+    {
+      "modelIndex": 27,
+      "className": "equipment_48",
+      "equipmentId": 48,
+      "ownerHeroId": 1
+    },
+    {
+      "modelIndex": 28,
+      "className": "equipment_49",
+      "equipmentId": 49,
+      "ownerHeroId": 6
+    },
+    {
+      "modelIndex": 29,
+      "className": "equipment_5",
+      "equipmentId": 5,
+      "ownerHeroId": 2
+    },
+    {
+      "modelIndex": 30,
+      "className": "equipment_50",
+      "equipmentId": 50,
+      "ownerHeroId": 4
+    },
+    {
+      "modelIndex": 31,
+      "className": "equipment_51",
+      "equipmentId": 51,
+      "ownerHeroId": 0
+    },
+    {
+      "modelIndex": 32,
+      "className": "equipment_52",
+      "equipmentId": 52,
+      "ownerHeroId": 7
+    },
+    {
+      "modelIndex": 33,
+      "className": "equipment_53",
+      "equipmentId": 53,
+      "ownerHeroId": 7
+    },
+    {
+      "modelIndex": 34,
+      "className": "equipment_56",
+      "equipmentId": 56,
+      "ownerHeroId": 7
+    },
+    {
+      "modelIndex": 35,
+      "className": "equipment_57",
+      "equipmentId": 57,
+      "ownerHeroId": 7
+    },
+    {
+      "modelIndex": 36,
+      "className": "equipment_59",
+      "equipmentId": 59,
+      "ownerHeroId": 7
+    },
+    {
+      "modelIndex": 37,
+      "className": "equipment_6",
+      "equipmentId": 6,
+      "ownerHeroId": 4
+    },
+    {
+      "modelIndex": 38,
+      "className": "equipment_60",
+      "equipmentId": 60,
+      "ownerHeroId": 7
+    },
+    {
+      "modelIndex": 39,
+      "className": "equipment_7",
+      "equipmentId": 7,
+      "ownerHeroId": 4
+    },
+    {
+      "modelIndex": 40,
+      "className": "equipment_8",
+      "equipmentId": 8,
+      "ownerHeroId": 0
+    },
+    {
+      "modelIndex": 41,
+      "className": "equipment_9",
+      "equipmentId": 9,
+      "ownerHeroId": 4
+    }
+  ],
+  "evaluation": {
+    "realValidationTop1": 0.947916666666667,
+    "realValidationTop3": 0.958333333333333,
+    "realTestTop1": 0.986111111111111,
+    "realTestTop3": 0.986111111111111,
+    "realReferenceClasses": 40,
+    "realReferenceMissingEquipmentIds": [
+      16,
+      60
+    ]
+  }
+}

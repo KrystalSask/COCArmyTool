@@ -36,7 +36,7 @@ npm run check
 | 单元测试 | `npm test` | Vitest 全量运行 |
 | 端到端测试 | `npm run test:e2e` | Playwright + 本机 Edge |
 | 网页构建 | `npm run build` | `dist/` |
-| 便携版发布（正式产物） | `npm run release:portable` | `release/COCArmyTool-v0.2.0-windows-x64-portable.zip` |
+| 便携版发布（正式产物） | `npm run release:portable` | `release/COCArmyTool-v0.3.0-windows-x64-portable.zip` |
 | NSIS 安装包（备用） | `npm run desktop:build` | `src-tauri/target/release/bundle/` |
 | 游戏目录审计 | `npm run catalog:audit` | 名称、类别、图标和活动单位检查 |
 | 样本审计 | `npm run samples:audit -- <批次>` | 批次 `reports/` |

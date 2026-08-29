@@ -1,6 +1,7 @@
+import { useState } from 'react'
 import { gameData, itemByIdAndKind } from '../data/gameData'
-import { heroEquipmentKey, heroPetKey, updateRecognizedCard, updateRecognizedHero, updateRecognizedHeroEquipment, updateRecognizedHeroMode, updateRecognizedHeroPet } from '../recognition/review'
-import type { CardUnresolvedKind, HeroUnresolvedKind, RecognizedHeroSlot, ScreenshotRecognitionResult } from '../recognition/types'
+import { addRecognizedCard, heroEquipmentKey, heroPetKey, removeRecognizedCard, updateRecognizedCard, updateRecognizedHero, updateRecognizedHeroEquipment, updateRecognizedHeroMode, updateRecognizedHeroPet } from '../recognition/review'
+import type { CardUnresolvedKind, HeroUnresolvedKind, RecognizedCard, RecognizedHeroSlot, ScreenshotRecognitionResult } from '../recognition/types'
 import { WARDEN_ID } from '../domain/validation'
 import { GameIcon } from './GameIcon'
 
@@ -16,6 +17,22 @@ const regionLabels: Record<string, string> = {
   castleArmy: '部落城堡援军',
 }
 
+// 手动添加卡片时的区域 → 允许类别映射（城堡援军可加兵种或法术）。
+const regionKindOptions: Record<RecognizedCard['region'], Array<RecognizedCard['selectedKind']>> = {
+  mainTroops: ['troop'],
+  mainSpells: ['spell'],
+  mainSiege: ['siege'],
+  castleArmy: ['troop', 'spell'],
+}
+
+const kindLabels: Record<RecognizedCard['selectedKind'], string> = {
+  troop: '兵种', siege: '攻城机器', spell: '法术',
+}
+
+const manualItemOptions = (kind: RecognizedCard['selectedKind']) => kind === 'troop'
+  ? gameData.troops
+  : kind === 'spell' ? gameData.spells : gameData.siegeMachines
+
 const cardIssueLabels: Record<CardUnresolvedKind, string> = {
   'missing-count': '缺少数量',
   'low-confidence': '置信度低',
@@ -26,6 +43,9 @@ const cardIssueLabels: Record<CardUnresolvedKind, string> = {
 const heroIssueLabels: Record<HeroUnresolvedKind, string> = {
   'incomplete-equipment': '装备不完整',
   'equipment-conflict': '装备归属冲突',
+  'duplicate-equipment': '装备重复冲突',
+  'duplicate-hero': '英雄重复冲突',
+  'duplicate-pet': '战宠重复冲突',
   'missing-pet': '缺少战宠',
   'low-confidence-pet': '战宠置信度低',
   'missing-mode': '缺少模式',
@@ -35,13 +55,37 @@ const heroIssueLabels: Record<HeroUnresolvedKind, string> = {
 const confidenceClass = (confidence: number, confirmed: boolean) => confirmed ? 'confirmed' : confidence >= .8 ? 'medium' : 'low'
 
 const heroEvidenceComplete = (hero: RecognizedHeroSlot) => hero.loadout.heroId !== undefined && hero.loadout.petId !== undefined
-  && hero.loadout.equipmentIds.length === 2 && hero.loadout.equipmentIds.every((id) => id !== undefined)
+  && hero.loadout.equipmentIds.length === 2 && new Set(hero.loadout.equipmentIds).size === 2 && hero.loadout.equipmentIds.every((id) => id !== undefined)
   && (hero.loadout.heroId !== WARDEN_ID || hero.loadout.mode !== undefined)
 
 // 列级键与子证据键都算命中：activeKey 可能指向整列或某一装备/战宠证据。
 const heroActive = (hero: RecognizedHeroSlot, activeKey?: string) => activeKey === hero.key || Boolean(activeKey?.startsWith(`${hero.key}-`))
 
 export function RecognitionReviewPanel({ result, activeKey, onActiveKey, onChange }: Props) {
+  const [expandedCandidates, setExpandedCandidates] = useState<Record<string, boolean>>({})
+  const visibleCandidates = <T,>(key: string, candidates: T[]) => expandedCandidates[key] ? candidates : candidates.slice(0, 3)
+  const toggleCandidates = (key: string) => setExpandedCandidates((current) => ({ ...current, [key]: !current[key] }))
+
+  // 手动添加卡片表单状态：区域决定允许的类别，切换类别时清空已选卡片。
+  const [addingCard, setAddingCard] = useState(false)
+  const [newRegion, setNewRegion] = useState<RecognizedCard['region']>('mainTroops')
+  const [newKind, setNewKind] = useState<RecognizedCard['selectedKind']>('troop')
+  const [newItemId, setNewItemId] = useState('')
+  const [newCount, setNewCount] = useState('')
+  const selectManualRegion = (region: RecognizedCard['region']) => {
+    setNewRegion(region)
+    setNewKind(regionKindOptions[region][0])
+    setNewItemId('')
+  }
+  const submitManualCard = () => {
+    const id = Number(newItemId)
+    const count = Number(newCount)
+    if (!Number.isSafeInteger(id) || count < 1) return
+    onChange(addRecognizedCard(result, { region: newRegion, selectedKind: newKind, selectedId: id, count }))
+    setAddingCard(false)
+    setNewItemId('')
+    setNewCount('')
+  }
   const confirmHero = (hero: RecognizedHeroSlot) => onChange(updateRecognizedHero(result, hero.key, {
     confirmed: true,
     issue: undefined,
@@ -51,14 +95,29 @@ export function RecognitionReviewPanel({ result, activeKey, onActiveKey, onChang
 
   return <div className="recognition-review-stack">
     <section className="recognition-review-section">
-      <div className="editor-title"><div><h3>卡片候选与数量</h3><p>等级区域始终忽略；黄色和红色项目必须确认。</p></div></div>
+      <div className="editor-title"><div><h3>卡片候选与数量</h3><p>等级区域始终忽略；黄色和红色项目必须确认。类别错误可直接删除或手动补卡。</p></div>
+        <button type="button" className="secondary-button add-card-toggle" onClick={() => setAddingCard((value) => !value)}>{addingCard ? '取消添加' : '+ 添加卡片'}</button></div>
+      {addingCard && <div className="manual-card-form" data-testid="manual-card-form">
+        <label>区域<select value={newRegion} onChange={(event) => selectManualRegion(event.target.value as RecognizedCard['region'])}>
+          {Object.entries(regionLabels).map(([region, label]) => <option value={region} key={region}>{label}</option>)}
+        </select></label>
+        <label>类别<select value={newKind} onChange={(event) => { setNewKind(event.target.value as RecognizedCard['selectedKind']); setNewItemId('') }}>
+          {regionKindOptions[newRegion].map((kind) => <option value={kind} key={kind}>{kindLabels[kind]}</option>)}
+        </select></label>
+        <label>卡片<select value={newItemId} onChange={(event) => setNewItemId(event.target.value)}>
+          <option value="" disabled>请选择</option>
+          {manualItemOptions(newKind).map((item) => <option value={item.id} key={item.id}>{item.displayName}</option>)}
+        </select></label>
+        <label>数量<input type="number" min="1" placeholder="必填" value={newCount} onChange={(event) => setNewCount(event.target.value)} /></label>
+        <button type="button" className="primary-button" disabled={newItemId === '' || !(Number(newCount) >= 1)} onClick={submitManualCard}>添加</button>
+      </div>}
       <div className="recognized-card-grid">
         {result.cards.map((card) => {
           const item = itemByIdAndKind(card.selectedId, card.selectedKind)
-          return <article className={`recognized-card ${confidenceClass(card.confidence, card.confirmed)} ${activeKey === card.key ? 'active' : ''}`} key={card.key} data-review-key={card.key}>
+          return <article className={`recognized-card ${confidenceClass(card.confidence, card.confirmed)} ${activeKey === card.key ? 'active' : ''}`} key={card.key} data-review-key={card.key} data-manual={card.manual ? 'true' : undefined}>
             <button className="recognized-card-main" type="button" onClick={() => onActiveKey(card.key)}>
               <GameIcon item={item} decorative />
-              <span><small>{regionLabels[card.region]} · 第 {result.cards.filter((candidate) => candidate.region === card.region).indexOf(card) + 1} 张</small><strong>{item?.displayName ?? `#${card.selectedId}`}</strong><em>置信度 {Math.round(card.confidence * 100)}%</em></span>
+              <span><small>{regionLabels[card.region]} · 第 {result.cards.filter((candidate) => candidate.region === card.region).indexOf(card) + 1} 张{card.manual ? ' · 手动' : ''}</small><strong>{item?.displayName ?? `#${card.selectedId}`}</strong><em>置信度 {Math.round(card.confidence * 100)}%</em></span>
             </button>
             {card.issueKind && <span className={`unresolved-badge ${card.issueKind}`}>{cardIssueLabels[card.issueKind]}</span>}
             <label className="recognized-count">数量<input type="number" min="1" placeholder="待填写" value={card.count ?? ''} onChange={(event) => {
@@ -69,7 +128,7 @@ export function RecognitionReviewPanel({ result, activeKey, onActiveKey, onChang
             }} /></label>
             <div className="count-candidate-row">数量候选 {card.countCandidates.map((candidate) => <button type="button" className={candidate.value === card.count ? 'selected' : ''} key={candidate.value} onClick={() => onChange(updateRecognizedCard(result, card.key, { count: candidate.value, confirmed: true, issue: undefined, issueKind: undefined }))}>×{candidate.value} · {Math.round(candidate.score * 100)}%</button>)}</div>
             <div className="candidate-row" aria-label={`${item?.displayName ?? card.key}候选`}>
-              {card.itemCandidates.map((candidate) => {
+              {visibleCandidates(card.key, card.itemCandidates).map((candidate) => {
                 const candidateItem = itemByIdAndKind(candidate.id, candidate.kind)
                 return <button type="button" className={candidate.id === card.selectedId ? 'selected' : ''} key={`${candidate.kind}-${candidate.id}`} title={`${candidateItem?.displayName} ${Math.round(candidate.score * 100)}%`} onClick={() => onChange(updateRecognizedCard(result, card.key, {
                   selectedId: candidate.id,
@@ -80,8 +139,11 @@ export function RecognitionReviewPanel({ result, activeKey, onActiveKey, onChang
                 }))}><GameIcon item={candidateItem} decorative /><span>{Math.round(candidate.score * 100)}%</span></button>
               })}
             </div>
-            <div className="recognized-card-actions"><button type="button" onClick={() => onActiveKey(card.key)}>定位原图</button>
+            {card.itemCandidates.length > 3 && <button type="button" className="candidate-expand" onClick={() => toggleCandidates(card.key)}>{expandedCandidates[card.key] ? '收起候选' : `展开其余 ${card.itemCandidates.length - 3} 项`}</button>}
+            <div className="recognized-card-actions">
+              {!card.manual && <button type="button" onClick={() => onActiveKey(card.key)}>定位原图</button>}
               {!card.confirmed && card.count !== undefined && <button type="button" className="confirm-link" onClick={() => onChange(updateRecognizedCard(result, card.key, { confirmed: true, issue: undefined, issueKind: undefined }))}>确认当前结果</button>}
+              <button type="button" className="remove-link" onClick={() => onChange(removeRecognizedCard(result, card.key))}>删除卡片</button>
             </div>
             {card.issue && <p>{card.issue}</p>}
           </article>
@@ -106,16 +168,18 @@ export function RecognitionReviewPanel({ result, activeKey, onActiveKey, onChang
               const evidenceKey = heroEquipmentKey(hero.key, equipmentIndex)
               return <div className={`hero-evidence-block ${activeKey === evidenceKey ? 'active' : ''}`} key={evidenceKey} data-review-key={evidenceKey}>
                 <button type="button" className="hero-evidence-heading" onClick={() => onActiveKey(evidenceKey)}><span>装备 {equipmentIndex + 1}</span>{evidence && <span className="evidence-candidates-count">{evidence.candidates.length} 个候选</span>}</button>
+                {evidence?.recognition && <small className="evidence-source">来源：{evidence.recognition.source === 'onnx' ? 'ONNX' : '模板'}{evidence.recognition.agreement === false ? ' · 与模板分歧' : ''}</small>}
                 <label>选择装备<select value={selectedId ?? ''} onChange={(event) => onChange(updateRecognizedHeroEquipment(result, hero.key, equipmentIndex, Number(event.target.value)))}>
                   <option value="" disabled>{selectedId === undefined ? '未识别' : '请选择'}</option>
                   {gameData.heroes.map((owner) => <optgroup label={owner.displayName} key={owner.id}>{gameData.equipment.filter((equipment) => equipment.hero === owner.name).map((equipment) => <option value={equipment.id} key={equipment.id}>{equipment.displayName}</option>)}</optgroup>)}
                 </select></label>
                 {evidence && evidence.candidates.length > 0 && <div className="candidate-row" aria-label={`${hero.key} 装备 ${equipmentIndex + 1} 候选`}>
-                  {evidence.candidates.map((candidate) => {
+                  {visibleCandidates(evidenceKey, evidence.candidates).map((candidate) => {
                     const candidateItem = gameData.equipmentById.get(candidate.id)
                     return <button type="button" className={candidate.id === selectedId ? 'selected' : ''} key={candidate.id} title={`${candidateItem?.displayName ?? `#${candidate.id}`} ${Math.round(candidate.score * 100)}%`} onClick={() => onChange(updateRecognizedHeroEquipment(result, hero.key, equipmentIndex, candidate.id))}><GameIcon item={candidateItem} decorative /><span>{Math.round(candidate.score * 100)}%</span></button>
                   })}
                 </div>}
+                {evidence && evidence.candidates.length > 3 && <button type="button" className="candidate-expand" onClick={() => toggleCandidates(evidenceKey)}>{expandedCandidates[evidenceKey] ? '收起候选' : `展开其余 ${evidence.candidates.length - 3} 项`}</button>}
               </div>
             })}
             <div className={`hero-evidence-block ${activeKey === heroPetKey(hero.key) ? 'active' : ''}`} data-review-key={heroPetKey(hero.key)}>
@@ -126,11 +190,12 @@ export function RecognitionReviewPanel({ result, activeKey, onActiveKey, onChang
               </select></label>
               <div className="recognized-pet-preview"><GameIcon item={pet} decorative /><span>{pet?.displayName ?? '未选择'}</span></div>
               {hero.pet && hero.pet.candidates.length > 0 && <div className="candidate-row" aria-label={`${hero.key} 战宠候选`}>
-                {hero.pet.candidates.map((candidate) => {
+                {visibleCandidates(heroPetKey(hero.key), hero.pet.candidates).map((candidate) => {
                   const candidateItem = gameData.petById.get(candidate.id)
                   return <button type="button" className={candidate.id === hero.loadout.petId ? 'selected' : ''} key={candidate.id} title={`${candidateItem?.displayName ?? `#${candidate.id}`} ${Math.round(candidate.score * 100)}%`} onClick={() => onChange(updateRecognizedHeroPet(result, hero.key, candidate.id))}><GameIcon item={candidateItem} decorative /><span>{Math.round(candidate.score * 100)}%</span></button>
                 })}
               </div>}
+              {hero.pet && hero.pet.candidates.length > 3 && <button type="button" className="candidate-expand" onClick={() => toggleCandidates(heroPetKey(hero.key))}>{expandedCandidates[heroPetKey(hero.key)] ? '收起候选' : `展开其余 ${hero.pet.candidates.length - 3} 项`}</button>}
             </div>
             {hero.loadout.heroId === WARDEN_ID && <label>大守护者模式<select value={hero.loadout.mode ?? ''} onChange={(event) => onChange(updateRecognizedHeroMode(result, hero.key, Number(event.target.value) as 0 | 1))}><option value="" disabled>请选择</option><option value="0">地面模式</option><option value="1">空中模式</option></select></label>}
             <div className="recognized-card-actions"><button type="button" onClick={() => onActiveKey(hero.key)}>定位原图</button>

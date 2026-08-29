@@ -1,5 +1,6 @@
 import { lazy, Suspense, useCallback, useEffect, useState } from 'react'
 import type { ArmyComposition, ArmyRecord } from './domain/types'
+import { isTauri } from './utils/platform'
 import { CreatePage } from './pages/CreatePage'
 import { EditorPage } from './pages/EditorPage'
 import { LibraryPage } from './pages/LibraryPage'
@@ -66,6 +67,6 @@ export default function App() {
     {page === 'screenshot' && <Suspense fallback={<main className="page-stack"><p className="status-message success">正在加载本地视觉识别模块……</p></main>}><ScreenshotRecognitionPage onEditInCalculator={(composition) => openEditor('screenshot', composition)} /></Suspense>}
     {page === 'editor' && editorSession && <EditorPage session={editorSession} onChange={setEditorSession} onSaved={refreshRecords} />}
     {page === 'library' && <LibraryPage records={records} onChanged={refreshRecords} onEditRecord={(record) => openEditor('library', undefined, undefined, record)} onEditComposition={(composition) => openEditor('library', composition)} />}
-    <footer><span>COCArmyTool v0.2.0 · 数据仅存本机</span><span>本内容为非官方内容，未经 Supercell 认可。详见 <a href="https://supercell.com/en/fan-content-policy/" target="_blank" rel="noreferrer">Supercell 粉丝内容政策</a>。</span></footer>
+    <footer><span>COCArmyTool v0.3.0 · {isTauri() ? '数据仅存本机' : '确认后的识别样本会上传用于改进模型'}</span><span>本内容为非官方内容，未经 Supercell 认可。详见 <a href="https://supercell.com/en/fan-content-policy/" target="_blank" rel="noreferrer">Supercell 粉丝内容政策</a>。</span></footer>
   </div>
 }

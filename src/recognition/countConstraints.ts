@@ -210,6 +210,14 @@ export const validateCardRules = (region: CardRegion, slots: DetectedCardSlot[])
     code: 'capacity-mismatch', severity: 'warning', slotIndexes: slots.map((_slot, index) => index),
     message: `视觉结果容量为 ${vectorKey(actual)}，与区域容量 ${vectorKey(target)} 不一致；保留视觉结果并要求人工核对。`,
   })
+  else if (slots.some((slot) => (slot.count?.confidence ?? 0) < .85)) issues.push({
+    // An apparently matching capacity is not strong enough to suppress a
+    // manual check when one of the OCR quantities is weak. Keep the visible
+    // quantity unchanged; this is a confidence warning, not a correction.
+    code: 'capacity-mismatch', severity: 'warning', slotIndexes: slots
+      .map((slot, index) => (slot.count?.confidence ?? 0) < .85 ? index : -1).filter((index) => index >= 0),
+    message: '容量数字存在低置信度，保留视觉结果并要求人工核对。',
+  })
   return { issues, suggestions }
 }
 

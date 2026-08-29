@@ -50,6 +50,35 @@ test('ONNX 分类与 PP-OCR 启用后样本 1 与人工真值逐项一致', asyn
   )
 })
 
+test('样本 2 的冰人不会在援军窄卡片中被误判为超级雪怪', async ({ page }) => {
+  await page.goto('/')
+  await page.getByRole('button', { name: '截图识别' }).click()
+  await page.locator('input[type="file"]').setInputFiles('recognition-samples/test_data/2.png')
+
+  const mainTroops = page.getByTestId('card-count-mainTroops')
+  const castleArmy = page.getByTestId('card-count-castleArmy')
+  await expect(mainTroops).toBeVisible()
+  await expect(castleArmy).toBeVisible()
+
+  const mainCandidates = (await mainTroops.getAttribute('data-top3') ?? '').split(';').map((slot) => slot.split('|'))
+  const castleCandidates = (await castleArmy.getAttribute('data-top3') ?? '').split(';').map((slot) => slot.split('|'))
+  expect(mainCandidates[0]?.[0]).toBe('troop:58')
+  expect(castleCandidates[2]?.[0]).toBe('troop:58')
+  expect(await castleArmy.getAttribute('data-slot-diagnostics')).toContain('category-shadow-correction:troop:147->58')
+})
+
+test('样本 3 的真实援军超级雪怪不会被模板规则改成冰人', async ({ page }) => {
+  await page.goto('/')
+  await page.getByRole('button', { name: '截图识别' }).click()
+  await page.locator('input[type="file"]').setInputFiles('recognition-samples/test_data/3.png')
+
+  const castleArmy = page.getByTestId('card-count-castleArmy')
+  await expect(castleArmy).toBeVisible()
+  const candidates = (await castleArmy.getAttribute('data-top3') ?? '').split(';').map((slot) => slot.split('|'))
+  expect(candidates[2]?.[0]).toBe('troop:147')
+  expect(await castleArmy.getAttribute('data-slot-diagnostics')).not.toContain('category-shadow-correction')
+})
+
 for (const sample of [11, 12]) test(`视频样本 ${sample} 保留完整英雄子卡分割`, async ({ page }) => {
   await page.goto('/')
   await page.getByRole('button', { name: '截图识别' }).click()

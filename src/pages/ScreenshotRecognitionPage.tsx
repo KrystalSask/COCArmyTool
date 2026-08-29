@@ -3,6 +3,8 @@ import { CompositionPanel } from '../components/CompositionPanel'
 import { RecognitionOverlay } from '../components/RecognitionOverlay'
 import { RecognitionReviewPanel } from '../components/RecognitionReviewPanel'
 import type { ArmyComposition } from '../domain/types'
+import { createArmyLink } from '../domain/armyLink'
+import { checkContainerConditions } from '../domain/validation'
 import { getLayoutDefinition } from '../recognition/layouts'
 import { mockRecognitionEngine } from '../recognition/mockEngine'
 import { analyzeCardLayout, type DetectedRegionCards } from '../recognition/cardAnalysis'
@@ -12,6 +14,7 @@ import { inspectScreenshotFile } from '../recognition/preflight'
 import { snapManualPanelEdge, type ManualPanelEdge } from '../recognition/panelLocator'
 import { projectRectFromViewport } from '../recognition/viewportLocator'
 import { buildRecognitionReview, canConfirmAllCandidates, confirmAllCandidates, confirmAllMockCandidates } from '../recognition/review'
+import { collectSample, flushSampleQueue, getSampleQueueSummary, isSampleCollectionSupported, type SampleQueueSummary } from '../recognition/sampleCollection'
 import type { NormalizedRect, ScreenshotPreflight, ScreenshotRecognitionResult } from '../recognition/types'
 import { listenForDesktopImageDrop } from '../utils/desktopImageDrop'
 
@@ -37,9 +40,24 @@ export function ScreenshotRecognitionPage({ onEditInCalculator }: Props) {
   const [dropActive, setDropActive] = useState(false)
   const [editingPanel, setEditingPanel] = useState(false)
   const [manualPanel, setManualPanel] = useState<NormalizedRect>()
+  const [sampleQueue, setSampleQueue] = useState<SampleQueueSummary>()
+  const sampleCollectionSupported = isSampleCollectionSupported()
   const recognitionRunRef = useRef(0)
+  // 机器原始输出的快照：生成候选时克隆，用于样本回传时的前后对照。
+  const machineResultRef = useRef<ScreenshotRecognitionResult | undefined>(undefined)
 
   useEffect(() => () => { if (previewUrl) URL.revokeObjectURL(previewUrl) }, [previewUrl])
+
+  const refreshSampleQueue = useCallback(() => {
+    void getSampleQueueSummary().then(setSampleQueue).catch(() => setSampleQueue(undefined))
+  }, [])
+
+  // web 端每次进入识别页时补传历史积压；桌面端不支持采集，不做任何网络动作。
+  useEffect(() => {
+    refreshSampleQueue()
+    if (!sampleCollectionSupported) return
+    void flushSampleQueue().then(refreshSampleQueue).catch(refreshSampleQueue)
+  }, [refreshSampleQueue, sampleCollectionSupported])
 
   const acceptFile = useCallback(async (nextFile: File, panelOverride?: NormalizedRect) => {
     const runId = ++recognitionRunRef.current
@@ -50,6 +68,7 @@ export function ScreenshotRecognitionPage({ onEditInCalculator }: Props) {
     setResult(undefined)
     setDetectedRegions([])
     setDetectedHeroes([])
+    machineResultRef.current = undefined
     setError('')
     setMessage('')
     setChecking(true)
@@ -69,6 +88,7 @@ export function ScreenshotRecognitionPage({ onEditInCalculator }: Props) {
           panel: analysis.selectedPanel,
           panelCandidates: analysis.panelCandidates ?? inspected.panelCandidates,
           panelConfidence: analysis.panelCandidates?.[0]?.totalScore ?? inspected.panelConfidence,
+          panelSelectionGap: analysis.panelSelectionGap ?? inspected.panelSelectionGap,
         } : inspected
         setPreflight(analyzedPreflight)
         setManualPanel(analyzedPreflight.panel)
@@ -141,6 +161,20 @@ export function ScreenshotRecognitionPage({ onEditInCalculator }: Props) {
   const review = useMemo(() => result ? buildRecognitionReview(result) : undefined, [result])
   const reviewReady = Boolean(preflight?.complete && review && review.unresolvedKeys.length === 0)
   const bulkConfirmReady = Boolean(result && canConfirmAllCandidates(result))
+  const capacityValidation = useMemo(() => review ? checkContainerConditions(review.composition) : undefined, [review])
+
+  // 两段式确认闸门：第一段批量确认可确认项（缺数量的卡待填、低置信度卡
+  // 必须逐卡核对），第二段在全部确认后由容量校验决定是否回传样本。
+  // unresolvedKeys 优先；批量闸门只决定“是否提供一键确认”，已确认完整
+  // 但有低置信度卡被逐卡核对过的结果仍直接进入容量分支。
+  const gate = useMemo(() => {
+    if (!result || !review) return undefined
+    const unresolved = review.unresolvedKeys.length
+    if (unresolved === 0) return { stage: 'capacity' as const, unresolved, capacityValid: capacityValidation?.valid ?? false }
+    if (!bulkConfirmReady) return { stage: 'focus' as const, unresolved }
+    const remainingAfterBulk = buildRecognitionReview(confirmAllCandidates(result)).unresolvedKeys.length
+    return { stage: remainingAfterBulk === unresolved ? 'fill-counts' as const : 'bulk' as const, unresolved }
+  }, [result, review, bulkConfirmReady, capacityValidation])
 
   const locate = (key: string) => {
     setActiveKey(key)
@@ -176,27 +210,62 @@ export function ScreenshotRecognitionPage({ onEditInCalculator }: Props) {
 
   const runVisualRecognition = () => {
     if (!preflight?.complete || !detectedRegions.length || !detectedHeroes.length) return
-    setResult(createVisualRecognitionResult(preflight, { regions: detectedRegions, heroes: detectedHeroes }))
+    const recognized = createVisualRecognitionResult(preflight, { regions: detectedRegions, heroes: detectedHeroes })
+    setResult(recognized)
+    machineResultRef.current = JSON.parse(JSON.stringify(recognized)) as ScreenshotRecognitionResult
     setMessage('真实视觉候选已生成。请逐项确认后再进行容量校验与链接导出。')
   }
 
+  // 进入编辑器。回传样本（web 端）只发生在“全部候选已确认 + 容量校验
+  // 通过”的路径：携带配兵链接与截图，桌面端/自动化/mock 引擎在
+  // collectSample 内部被闸门拦下。容量不通过时展示差异原因但仍放行。
+  const enterEditorWith = (composition: Parameters<typeof onEditInCalculator>[0], unresolvedCount: number) => {
+    const validation = checkContainerConditions(composition)
+    const machineResult = machineResultRef.current
+    if (validation.valid && machineResult && file && preflight?.complete) {
+      collectSample({
+        file,
+        preflight,
+        machineResult,
+        finalComposition: composition,
+        armyLink: createArmyLink(composition),
+        unresolvedCountAtEntry: unresolvedCount,
+      })
+      window.setTimeout(refreshSampleQueue, 1500)
+    }
+    onEditInCalculator(composition)
+  }
+
+  // 两段式主按钮：第一段一键确认所有可确认项（剩余项定位到第一个）；
+  // 全部确认后进入容量闸门分支（通过 → 生成链接并回传；不通过 → 仅进入）。
   const confirmAllAndEnter = () => {
-    if (!result) return
-    if (reviewReady && review) {
-      onEditInCalculator(review.composition)
+    if (!result || !review) return
+    if (review.unresolvedKeys.length > 0) {
+      if (!bulkConfirmReady) {
+        focusFirstUnresolved(review.unresolvedKeys)
+        return
+      }
+      const confirmed = confirmAllCandidates(result)
+      setResult(confirmed)
+      const remaining = buildRecognitionReview(confirmed).unresolvedKeys
+      if (remaining.length) focusFirstUnresolved(remaining)
+      else enterEditorWith(buildRecognitionReview(confirmed).composition, 0)
       return
     }
-    const confirmed = bulkConfirmReady ? confirmAllCandidates(result) : result
-    if (confirmed !== result) setResult(confirmed)
-    const remaining = buildRecognitionReview(confirmed).unresolvedKeys
-    if (remaining.length) focusFirstUnresolved(remaining)
-    else onEditInCalculator(buildRecognitionReview(confirmed).composition)
+    enterEditorWith(review.composition, 0)
+  }
+
+  // 兜底入口：不回传样本，直接带着当前候选进入编辑器修正。
+  const skipToEditor = () => {
+    if (review) onEditInCalculator(review.composition)
   }
 
   return <main className="page-stack screenshot-page">
-    <section className="intro-card screenshot-intro">
+      <section className="intro-card screenshot-intro">
       <span className="eyebrow">浏览器本地处理 · 真实视觉识别</span><h1>从完整截图识别配兵</h1>
-      <p>上传国服完整横屏军队配置截图。图片不会上传服务器；识别结果会提供候选并要求人工确认，通过容量与链接回环检查后才能导出。</p>
+      <p>上传国服完整横屏军队配置截图。识别在浏览器本地进行，结果需人工确认；全部确认且容量校验通过后生成配兵链接。</p>
+      {sampleCollectionSupported && <p className="sample-collection-note">全部确认并符合容器条件时，本页会把本次截图、机器候选、你的修正结果与配兵链接上传到作者服务器，仅用于改进识别模型。</p>}
+      {sampleCollectionSupported && sampleQueue && <p className="sample-queue-status" data-testid="sample-queue-status">样本队列：待上传 {sampleQueue.pending} 条 · 已上传 {sampleQueue.uploaded} 条</p>}
       <div className={`screenshot-dropzone ${file ? 'has-file' : ''} ${dropActive ? 'drag-active' : ''}`}
         onDragEnter={(event) => { event.preventDefault(); setDropActive(true) }}
         onDragLeave={() => setDropActive(false)}
@@ -223,7 +292,7 @@ export function ScreenshotRecognitionPage({ onEditInCalculator }: Props) {
         <span><small>游戏画面</small><strong>{preflight.gameViewport && (preflight.gameViewport.width < .999 || preflight.gameViewport.height < .999) ? '已裁剪黑边' : '完整画面'}</strong></span>
         <span data-testid="panel-location"
           data-panel={`${preflight.panel.x},${preflight.panel.y},${preflight.panel.width},${preflight.panel.height}`}
-          data-panel-candidates={preflight.panelCandidates?.map((candidate) => `${candidate.id}:${candidate.geometryScore.toFixed(4)}:${candidate.cardStructureScore?.toFixed(4) ?? '-'}:${candidate.consistencyScore?.toFixed(4) ?? '-'}:${candidate.totalScore?.toFixed(4) ?? '-'}:${candidate.panel.x.toFixed(5)},${candidate.panel.y.toFixed(5)},${candidate.panel.width.toFixed(5)},${candidate.panel.height.toFixed(5)}`).join(';') ?? ''}
+          data-panel-candidates={preflight.panelCandidates?.map((candidate) => `${candidate.id}:${candidate.geometryScore.toFixed(4)}:${candidate.cardStructureScore?.toFixed(4) ?? '-'}:${candidate.heroStructureScore?.toFixed(4) ?? '-'}:${candidate.consistencyScore?.toFixed(4) ?? '-'}:${candidate.totalScore?.toFixed(4) ?? '-'}:${candidate.panel.x.toFixed(5)},${candidate.panel.y.toFixed(5)},${candidate.panel.width.toFixed(5)},${candidate.panel.height.toFixed(5)}`).join(';') ?? ''}
           data-panel-selection-gap={preflight.panelSelectionGap?.toFixed(4) ?? ''}>
           <small>面板定位</small><strong>{Math.round(preflight.panelConfidence * 100)}%</strong>
         </span>
@@ -251,7 +320,7 @@ export function ScreenshotRecognitionPage({ onEditInCalculator }: Props) {
           key={region.region}
         ><small>{region.label}</small><strong>{region.slots.length} 张卡片 · {region.slots.filter((slot) => slot.candidates?.length).length} 张有候选 · {region.slots.filter((slot) => slot.count?.value).length} 个数量</strong></span>)}
       </div>}
-        {detectedHeroes.length > 0 && <div className="preflight-grid" data-testid="hero-visual-analysis" data-hero-ids={detectedHeroes.map((hero) => hero.heroId ?? '?').join(',')} data-modes={detectedHeroes.map((hero) => hero.mode?.candidates[0]?.value ?? '').join(',')} data-equipment-ids={detectedHeroes.map((hero) => hero.equipment.map((item) => item.candidates[0]?.id ?? '?').join('_')).join(';')} data-equipment-candidates={detectedHeroes.map((hero) => hero.equipment.map((item) => item.candidates.map((candidate) => `${candidate.id}:${candidate.score.toFixed(3)}`).join('|')).join('_')).join(';')} data-pet-ids={detectedHeroes.map((hero) => hero.pet.recognizedId ?? '?').join(',')} data-pet-details={detectedHeroes.map((hero) => `${hero.pet.candidates[0]?.id ?? '?'}:${hero.pet.candidates[0]?.score.toFixed(3) ?? '0'}`).join(',')}
+        {detectedHeroes.length > 0 && <div className="preflight-grid" data-testid="hero-visual-analysis" data-hero-ids={detectedHeroes.map((hero) => hero.heroId ?? '?').join(',')} data-modes={detectedHeroes.map((hero) => hero.mode?.candidates[0]?.value ?? '').join(',')} data-equipment-ids={detectedHeroes.map((hero) => hero.equipment.map((item) => item.candidates[0]?.id ?? '?').join('_')).join(';')} data-equipment-candidates={detectedHeroes.map((hero) => hero.equipment.map((item) => item.candidates.map((candidate) => `${candidate.id}:${candidate.score.toFixed(3)}:${candidate.source ?? 'unknown'}`).join('|')).join('_')).join(';')} data-equipment-sources={detectedHeroes.map((hero) => hero.equipment.map((item) => item.recognition?.source ?? 'none').join('_')).join(';')} data-pet-ids={detectedHeroes.map((hero) => hero.pet.recognizedId ?? '?').join(',')} data-pet-details={detectedHeroes.map((hero) => `${hero.pet.candidates[0]?.id ?? '?'}:${hero.pet.candidates[0]?.score.toFixed(3) ?? '0'}`).join(',')}
           data-pet-candidates={detectedHeroes.map((hero) => hero.pet.candidates.map((candidate) => `${candidate.id}:${candidate.score.toFixed(3)}`).join('|')).join(';')}
           data-equipment-rects={detectedHeroes.flatMap((hero) => hero.equipment).map((item) => `${item.rect.x.toFixed(5)},${item.rect.y.toFixed(5)},${item.rect.width.toFixed(5)},${item.rect.height.toFixed(5)}`).join(';')}
           data-pet-rects={detectedHeroes.map((hero) => `${hero.pet.rect.x.toFixed(5)},${hero.pet.rect.y.toFixed(5)},${hero.pet.rect.width.toFixed(5)},${hero.pet.rect.height.toFixed(5)}`).join(';')}
@@ -275,22 +344,30 @@ export function ScreenshotRecognitionPage({ onEditInCalculator }: Props) {
 
     {result && review && <>
       {result.warnings.map((warning) => <p className="status-message warning standalone-message" key={warning}>{warning}</p>)}
-      <RecognitionReviewPanel result={result} activeKey={activeKey} onActiveKey={locate} onChange={setResult} />
+      <RecognitionReviewPanel result={review.result} activeKey={activeKey} onActiveKey={locate} onChange={setResult} />
       {result.engine === 'mock' && review.unresolvedKeys.length > 0 && <button className="secondary-button mock-confirm-button" onClick={() => setResult(confirmAllMockCandidates(result))}>确认全部模拟候选（仅用于管线验收）</button>}
       <section className="form-card recognition-export-card" data-testid="recognition-review-gate" data-composition={JSON.stringify(review.composition)}>
         <div className="section-title"><div><span className="eyebrow">候选核对</span><h2>{reviewReady ? '识别候选已确认' : '请确认所有识别候选'}</h2></div>
-          <span className={`validation-badge ${reviewReady ? 'valid' : 'warning'}`}>{reviewReady ? '可以进入编辑器' : `${review.unresolvedKeys.length} 个待确认项`}</span></div>
+          <span className={`validation-badge ${reviewReady && gate?.capacityValid ? 'valid' : 'warning'}`}>{!reviewReady ? `${review.unresolvedKeys.length} 个待确认项` : gate?.capacityValid ? '可以进入编辑器' : '容量校验未通过'}</span></div>
         <div className="recognition-gates">
           <span className={preflight?.complete ? 'passed' : ''}>完整截图</span>
           <span className={!review.unresolvedKeys.length ? 'passed' : ''}>候选已确认</span>
-          <span>编辑器校验</span>
+          <span className={reviewReady && gate?.capacityValid ? 'passed' : ''}>容器条件</span>
           <span>保存或复制</span>
         </div>
-        <p>识别页面只负责证据与候选确认。配兵容量、英雄规则、方案资料、保存和链接回环校验将在统一编辑器中完成。</p>
+        <p>识别页面只负责证据与候选确认。全部确认后点击按钮：容器条件通过时会生成配兵链接并回传识别样本（web 端），未通过时展示差异原因，可直接进入编辑器修正。</p>
+        {reviewReady && capacityValidation && !capacityValidation.valid && <ul className="capacity-issues" data-testid="capacity-issues">
+          {capacityValidation.issues.slice(0, 6).map((issue) => <li key={issue.code}>{issue.message}</li>)}
+        </ul>}
         <div className="button-row">
           <button className="primary-button" disabled={!result || checking} onClick={confirmAllAndEnter}>
-            {reviewReady ? '进入配兵编辑器' : bulkConfirmReady ? '一键确认全部并进入配兵编辑器' : `定位首个待确认项（剩余 ${review?.unresolvedKeys.length ?? 0} 项）`}
+            {!gate ? '进入配兵编辑器'
+              : gate.stage === 'capacity' ? (gate.capacityValid ? '进入配兵编辑器' : '容量校验未通过 · 仍要进入编辑器')
+              : gate.stage === 'bulk' ? `一键确认全部（剩余 ${gate.unresolved} 项待确认）`
+              : gate.stage === 'fill-counts' ? `补全数量后进入编辑器（剩余 ${gate.unresolved} 项待填）`
+              : `定位首个待确认项（剩余 ${gate.unresolved} 项）`}
           </button>
+          {!reviewReady && <button className="secondary-button" type="button" disabled={!result || checking} onClick={skipToEditor}>跳过确认直接进入编辑器</button>}
         </div>
       </section>
       <CompositionPanel composition={review.composition} title="截图识别配置预览" />

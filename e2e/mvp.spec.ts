@@ -79,6 +79,42 @@ const maximumCandidateMatches = (expected: string[], candidates: string[][]) => 
   return expected.reduce((count, _item, index) => count + Number(visit(index, new Set())), 0)
 }
 
+const regionDisplayNames: Record<string, string> = {
+  mainTroops: '主军队', mainSpells: '主法术', mainSiege: '攻城机器', castleArmy: '部落城堡援军',
+}
+
+const cardItemKey = async (card: import('@playwright/test').Locator) => {
+  const src = await card.locator('.recognized-card-main img.game-icon').first().getAttribute('src')
+  return src?.match(/\/game-icons\/(troop|siege|spell)\/(\d+)\.png$/)?.slice(1).join(':') ?? null
+}
+
+// 新契约：全部确认后还需容器条件（容量精确填满）通过才能进入编辑器。
+// 样本 1 的类别 top1 有误（数量全部正确），这里按 ground-truth 在
+// 候选中修正选中项，再断言导出按钮可用。
+const correctCardItemsFromGroundTruth = async (page: import('@playwright/test').Page, expectedItems: Record<string, string[]>) => {
+  for (const [region, label] of Object.entries(regionDisplayNames)) {
+    const pending = new Set(expectedItems[region as keyof typeof expectedItems])
+    const cards = page.locator('.recognized-card', { hasText: label })
+    const total = await cards.count()
+    const mismatched: number[] = []
+    for (let index = 0; index < total; index += 1) {
+      const key = await cardItemKey(cards.nth(index))
+      if (key && pending.has(key)) pending.delete(key)
+      else mismatched.push(index)
+    }
+    for (const index of mismatched) {
+      const expectedKey = pending.values().next().value as string | undefined
+      if (!expectedKey) break
+      pending.delete(expectedKey)
+      const [kind, id] = expectedKey.split(':')
+      const card = cards.nth(index)
+      const expand = card.getByRole('button', { name: /展开其余/ })
+      if (await expand.count()) await expand.first().click()
+      await card.locator(`.candidate-row button:has(img[src$="/game-icons/${kind}/${id}.png"])`).first().click()
+    }
+  }
+}
+
 const confirmAllVisualCandidates = async (page: import('@playwright/test').Page) => {
   while (await page.getByRole('button', { name: '确认当前结果' }).count()) await page.getByRole('button', { name: '确认当前结果' }).first().click()
   while (await page.getByRole('button', { name: '确认英雄配置' }).count()) await page.getByRole('button', { name: '确认英雄配置' }).first().click()
@@ -148,14 +184,15 @@ test('未保存编辑会话离开时需要确认', async ({ page }) => {
 test('完整截图通过本地检查并进入模拟校正与安全导出', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 })
   await page.goto('/')
+  await page.route('**tencentscf.com/**', (route) => route.abort())
   await page.getByRole('button', { name: '截图识别' }).click()
   await page.locator('input[type="file"]').setInputFiles('recognition-samples/seed-unlabelled/images/001-saved.jpg')
   await expect(page.getByText(/完整截图检查通过/)).toBeVisible()
   await expect(page.getByText('准备进攻 / 进攻确认', { exact: true })).toBeVisible()
   await page.getByRole('button', { name: '运行模拟识别' }).click()
   await expect(page.getByText(/当前为模拟识别结果/)).toBeVisible()
-  await expect(page.getByRole('button', { name: '一键确认全部并进入配兵编辑器' })).toBeEnabled()
-  await page.getByRole('button', { name: '一键确认全部并进入配兵编辑器' }).click()
+  await expect(page.getByRole('button', { name: '一键确认全部' })).toBeEnabled()
+  await page.getByRole('button', { name: '一键确认全部' }).click()
   await expect(page.getByRole('heading', { name: '配兵编辑器' })).toBeVisible()
   await page.screenshot({ path: 'artifacts/screenshot-recognition-pipeline.png', fullPage: true })
 })
@@ -183,6 +220,7 @@ test('移动端截图上传入口和原图预览保持可用', async ({ page }) 
 test('13 个原始样本均能自适应定位完整军队面板', async ({ page }) => {
   test.setTimeout(5 * 60_000)
   await page.goto('/')
+  await page.route('**tencentscf.com/**', (route) => route.abort())
   await page.getByRole('button', { name: '截图识别' }).click()
   let visualTop1Correct = 0
   let visualTop1Total = 0
@@ -245,9 +283,15 @@ test('13 个原始样本均能自适应定位完整军队面板', async ({ page 
         await expect(gate).toContainText('个待确认项')
         exportChecks['002'] = false
       } else {
-        const enabled = await page.getByRole('button', { name: '进入配兵编辑器' }).isEnabled()
+        // 容器条件未通过（如样本 1 的类别 top1 错误）时按 ground-truth
+        // 修正候选，再断言可进入编辑器。
+        const gate = page.getByTestId('recognition-review-gate')
+        if (await gate.locator('.validation-badge', { hasText: '容量校验未通过' }).isVisible()) {
+          await correctCardItemsFromGroundTruth(page, expectedItems)
+        }
+        const enabled = await gate.getByRole('button', { name: '进入配兵编辑器' }).isEnabled()
         exportChecks[String(id).padStart(3, '0')] = enabled
-        expect(enabled, await page.getByTestId('recognition-review-gate').getAttribute('data-composition')).toBe(true)
+        expect(enabled, await gate.getAttribute('data-composition')).toBe(true)
       }
     }
   }
@@ -273,5 +317,5 @@ test('13 个原始样本均能自适应定位完整军队面板', async ({ page 
   await page.getByRole('button', { name: '生成真实识别候选' }).click()
   await expect(page.getByText('真实视觉候选已生成。请逐项确认后再进行容量校验与链接导出。')).toBeVisible()
   await expect(page.getByText(/当前为本地真实视觉候选/)).toBeVisible()
-  await expect(page.getByRole('button', { name: '一键确认全部并进入配兵编辑器' })).toBeEnabled()
+  await expect(page.getByRole('button', { name: '一键确认全部' })).toBeEnabled()
 })

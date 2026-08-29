@@ -86,7 +86,8 @@ export function RecognitionOverlay({ imageUrl, alt, result, preflightPanel, dete
       {result.anchors.map((anchor) => <span className="recognition-anchor-box" style={rectStyle(anchor.rect)} key={anchor.key}>{anchor.label}</span>)}
       {result.regions.map((region) => <span className={`recognition-region-box region-${region.kind}`} style={rectStyle(region.rect)} key={region.kind}>{region.label}</span>)}
     </>}
-    {result?.cards.map((card) => <button type="button" aria-label={`定位${card.key}`} className={`recognition-card-box ${activeKey === card.key ? 'active' : ''} ${card.confirmed ? 'confirmed' : 'unresolved'}`} style={rectStyle(card.rect)} key={card.key} onClick={() => onSelectKey?.(card.key)} />)}
+    {/* 手动添加的卡片没有真实截图矩形，不在原图上画定位框。 */}
+    {result?.cards.filter((card) => !card.manual).map((card) => <button type="button" aria-label={`定位${card.key}`} className={`recognition-card-box ${activeKey === card.key ? 'active' : ''} ${card.confirmed ? 'confirmed' : 'unresolved'}`} style={rectStyle(card.rect)} key={card.key} onClick={() => onSelectKey?.(card.key)} />)}
     {result?.heroes.map((hero) => {
       const active = activeKey === hero.key || Boolean(activeKey?.startsWith(`${hero.key}-`))
       return <Fragment key={hero.key}>

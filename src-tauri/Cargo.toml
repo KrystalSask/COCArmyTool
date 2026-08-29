@@ -1,6 +1,6 @@
 [package]
 name = "coc-army-tool"
-version = "0.2.0"
+version = "0.3.0"
 description = "COCArmyTool Windows 桌面应用"
 authors = ["Yan Yushuai"]
 edition = "2021"

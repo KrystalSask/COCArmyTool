@@ -1,4 +1,6 @@
-type WorkerResponse = { id: number, values?: number[], dims?: readonly number[], error?: string }
+import type { EquipmentModelManifest } from './modelManifest'
+
+type WorkerResponse = { id: number, values?: number[], dims?: readonly number[], manifest?: EquipmentModelManifest, error?: string }
 
 let worker: Worker | undefined
 let nextId = 1
@@ -41,4 +43,10 @@ export const runArmyCardClassifier = async (data: Float32Array) => {
 export const runArmyCountOcr = async (data: Float32Array, width: number) => {
   const response = await request({ type: 'ocr', data, width })
   return { values: response.values ?? [], dims: response.dims ?? [] }
+}
+
+export const runEquipmentClassifier = async (data: Float32Array) => {
+  const response = await request({ type: 'equipment', data })
+  if (!response.manifest) throw new Error('装备模型未返回 manifest')
+  return { values: response.values ?? [], manifest: response.manifest }
 }
