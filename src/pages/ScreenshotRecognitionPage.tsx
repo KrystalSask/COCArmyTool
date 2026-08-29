@@ -15,6 +15,7 @@ import { snapManualPanelEdge, type ManualPanelEdge } from '../recognition/panelL
 import { projectRectFromViewport } from '../recognition/viewportLocator'
 import { buildRecognitionReview, canConfirmAllCandidates, confirmAllCandidates, confirmAllMockCandidates } from '../recognition/review'
 import { collectSample, flushSampleQueue, getSampleQueueSummary, isSampleCollectionSupported, type SampleQueueSummary } from '../recognition/sampleCollection'
+import { warmupRecognitionModels } from '../recognition/recognitionWorkerClient'
 import type { NormalizedRect, ScreenshotPreflight, ScreenshotRecognitionResult } from '../recognition/types'
 import { listenForDesktopImageDrop } from '../utils/desktopImageDrop'
 
@@ -42,6 +43,21 @@ export function ScreenshotRecognitionPage({ onEditInCalculator }: Props) {
   const [manualPanel, setManualPanel] = useState<NormalizedRect>()
   const [sampleQueue, setSampleQueue] = useState<SampleQueueSummary>()
   const sampleCollectionSupported = isSampleCollectionSupported()
+  // 识别模型后台预热：进入识别页立即开始下载与初始化（首次约 34MB），
+  // 与选图/上传并行，避免把首次加载等待堆在点击识别之后。
+  const [modelsWarming, setModelsWarming] = useState(true)
+
+  useEffect(() => {
+    let cancelled = false
+    warmupRecognitionModels()
+      .catch(() => {
+        // 预热失败不打断页面；真正识别时仍会按原有逻辑加载。
+      })
+      .finally(() => {
+        if (!cancelled) setModelsWarming(false)
+      })
+    return () => { cancelled = true }
+  }, [])
   const recognitionRunRef = useRef(0)
   // 机器原始输出的快照：生成候选时克隆，用于样本回传时的前后对照。
   const machineResultRef = useRef<ScreenshotRecognitionResult | undefined>(undefined)
@@ -266,6 +282,7 @@ export function ScreenshotRecognitionPage({ onEditInCalculator }: Props) {
       <p>上传国服完整横屏军队配置截图。识别在浏览器本地进行，结果需人工确认；全部确认且容量校验通过后生成配兵链接。</p>
       {sampleCollectionSupported && <p className="sample-collection-note">全部确认并符合容器条件时，本页会把本次截图、机器候选、你的修正结果与配兵链接上传到作者服务器，仅用于改进识别模型。</p>}
       {sampleCollectionSupported && sampleQueue && <p className="sample-queue-status" data-testid="sample-queue-status">样本队列：待上传 {sampleQueue.pending} 条 · 已上传 {sampleQueue.uploaded} 条</p>}
+      {modelsWarming && <p className="sample-collection-note" data-testid="model-warmup-note">识别模型正在后台预热：首次访问需下载约 34MB 并完成初始化，完成后本浏览器会长期缓存，之后秒开。等待期间上传截图也无需顾虑，加载会自动衔接。</p>}
       <div className={`screenshot-dropzone ${file ? 'has-file' : ''} ${dropActive ? 'drag-active' : ''}`}
         onDragEnter={(event) => { event.preventDefault(); setDropActive(true) }}
         onDragLeave={() => setDropActive(false)}

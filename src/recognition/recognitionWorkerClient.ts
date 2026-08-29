@@ -25,15 +25,22 @@ const getWorker = () => {
   return worker
 }
 
-const request = (message: Omit<Record<string, unknown>, 'id'>) => new Promise<WorkerResponse>((resolve, reject) => {
+const request = (message: Omit<Record<string, unknown>, 'id'>, timeoutMs = 60_000) => new Promise<WorkerResponse>((resolve, reject) => {
   const id = nextId++
   const timer = window.setTimeout(() => {
     pending.delete(id)
     reject(new Error('识别模型推理超时'))
-  }, 60_000)
+  }, timeoutMs)
   pending.set(id, { resolve, reject, timer })
   getWorker().postMessage({ ...message, id })
 })
+
+// 后台预热全部识别模型（下载 + 推理会话初始化）。首次访问约 34MB，
+// 慢网络下可能超过推理默认超时，这里放宽到 10 分钟；预热失败不打断
+// 页面，真正识别时仍会按原有逻辑加载。
+export const warmupRecognitionModels = async (): Promise<void> => {
+  await request({ type: 'warmup' }, 10 * 60_000)
+}
 
 export const runArmyCardClassifier = async (data: Float32Array) => {
   const response = await request({ type: 'classify', data })

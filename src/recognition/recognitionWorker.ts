@@ -4,6 +4,7 @@ import wasmUrl from '../../node_modules/onnxruntime-web/dist/ort-wasm-simd-threa
 import { EQUIPMENT_MODEL_FILES, MODEL_FILES, modelAssetUrl, type EquipmentModelManifest } from './modelManifest'
 
 type Request =
+  | { id: number, type: 'warmup' }
   | { id: number, type: 'classify', data: Float32Array }
   | { id: number, type: 'ocr', data: Float32Array, width: number }
   | { id: number, type: 'equipment', data: Float32Array }
@@ -47,7 +48,12 @@ const equipment = () => equipmentPromise ??= (async () => {
 
 worker.onmessage = async ({ data: request }: MessageEvent<Request>) => {
   try {
-    if (request.type === 'classify') {
+    if (request.type === 'warmup') {
+      // 后台预热：提前完成三个模型的下载与推理会话初始化，
+      // 让用户上传截图后无需再等首次加载。
+      await Promise.all([classifier(), ocr(), equipment()])
+      worker.postMessage({ id: request.id, warmed: true })
+    } else if (request.type === 'classify') {
       const session = await classifier()
       const result = await session.run({ images: new ort.Tensor('float32', request.data, [1, 3, 160, 160]) })
       worker.postMessage({ id: request.id, values: Array.from(result.output0.data as Float32Array) })
