@@ -232,20 +232,21 @@ export function ScreenshotRecognitionPage({ onEditInCalculator }: Props) {
     setMessage('真实视觉候选已生成。请逐项确认后再进行容量校验与链接导出。')
   }
 
-  // 进入编辑器。回传样本（web 端）只发生在“全部候选已确认 + 容量校验
-  // 通过”的路径：携带配兵链接与截图，桌面端/自动化/mock 引擎在
-  // collectSample 内部被闸门拦下。容量不通过时展示差异原因但仍放行。
+  // 进入编辑器。web 端所有进入编辑器的路径都回传样本（识别失败/未确认
+  // 完的样本同样有价值，unresolvedCountAtEntry 如实记录）；armyLink 仅在
+  // 容器条件通过（即“一键确认全部”路径）时附带。桌面端/自动化/mock
+  // 引擎在 collectSample 内部被闸门拦下。容量不通过时展示差异原因。
   const enterEditorWith = (composition: Parameters<typeof onEditInCalculator>[0], unresolvedCount: number) => {
     const validation = checkContainerConditions(composition)
     const machineResult = machineResultRef.current
-    if (validation.valid && machineResult && file && preflight?.complete) {
+    if (machineResult && file && preflight?.complete) {
       collectSample({
         file,
         preflight,
         machineResult,
         finalComposition: composition,
-        armyLink: createArmyLink(composition),
         unresolvedCountAtEntry: unresolvedCount,
+        ...(validation.valid ? { armyLink: createArmyLink(composition) } : {}),
       })
       window.setTimeout(refreshSampleQueue, 1500)
     }
@@ -271,16 +272,29 @@ export function ScreenshotRecognitionPage({ onEditInCalculator }: Props) {
     enterEditorWith(review.composition, 0)
   }
 
-  // 兜底入口：不回传样本，直接带着当前候选进入编辑器修正。
+  // 兜底入口：识别失败/未确认完同样回传样本（最有价值的训练数据，
+  // 标记为未完成确认、不带配兵链接），然后带着当前候选进入编辑器修正。
   const skipToEditor = () => {
-    if (review) onEditInCalculator(review.composition)
+    if (!review) return
+    const machineResult = machineResultRef.current
+    if (machineResult && file && preflight?.complete) {
+      collectSample({
+        file,
+        preflight,
+        machineResult,
+        finalComposition: review.composition,
+        unresolvedCountAtEntry: review.unresolvedKeys.length,
+      })
+      window.setTimeout(refreshSampleQueue, 1500)
+    }
+    onEditInCalculator(review.composition)
   }
 
   return <main className="page-stack screenshot-page">
       <section className="intro-card screenshot-intro">
       <span className="eyebrow">浏览器本地处理 · 真实视觉识别</span><h1>从完整截图识别配兵</h1>
       <p>上传国服完整横屏军队配置截图。识别在浏览器本地进行，结果需人工确认；全部确认且容量校验通过后生成配兵链接。</p>
-      {sampleCollectionSupported && <p className="sample-collection-note">全部确认并符合容器条件时，本页会把本次截图、机器候选、你的修正结果与配兵链接上传到作者服务器，仅用于改进识别模型。</p>}
+      {sampleCollectionSupported && <p className="sample-collection-note">进入配兵编辑器时会自动回传识别样本（本次截图、机器候选与你的修正结果），一键确认全部且容器条件通过时额外附带配兵链接，仅用于改进识别模型。</p>}
       {sampleCollectionSupported && sampleQueue && <p className="sample-queue-status" data-testid="sample-queue-status">样本队列：待上传 {sampleQueue.pending} 条 · 已上传 {sampleQueue.uploaded} 条</p>}
       {modelsWarming && <p className="sample-collection-note" data-testid="model-warmup-note">识别模型正在后台预热：首次访问需下载约 34MB 并完成初始化，完成后本浏览器会长期缓存，之后秒开。等待期间上传截图也无需顾虑，加载会自动衔接。</p>}
       <div className={`screenshot-dropzone ${file ? 'has-file' : ''} ${dropActive ? 'drag-active' : ''}`}
@@ -372,7 +386,7 @@ export function ScreenshotRecognitionPage({ onEditInCalculator }: Props) {
           <span className={reviewReady && gate?.capacityValid ? 'passed' : ''}>容器条件</span>
           <span>保存或复制</span>
         </div>
-        <p>识别页面只负责证据与候选确认。全部确认后点击按钮：容器条件通过时会生成配兵链接并回传识别样本（web 端），未通过时展示差异原因，可直接进入编辑器修正。</p>
+        <p>识别页面只负责证据与候选确认。全部确认后点击按钮：容器条件通过时会生成配兵链接并随样本回传（web 端），未通过时展示差异原因；跳过确认同样回传样本（标记为未完成确认）。</p>
         {reviewReady && capacityValidation && !capacityValidation.valid && <ul className="capacity-issues" data-testid="capacity-issues">
           {capacityValidation.issues.slice(0, 6).map((issue) => <li key={issue.code}>{issue.message}</li>)}
         </ul>}

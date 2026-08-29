@@ -192,11 +192,12 @@ export const heroUnresolvedFromEvidence = (
 }
 
 export const canConfirmAllCandidates = (result: ScreenshotRecognitionResult) => result.cards.length > 0
-  // 数量缺失不再阻塞批量确认（补填数量时逐卡自动确认）；低置信度卡片
-  // 仍必须逐卡人工核对，防止低质量 OCR 直接进入批量确认与训练样本。
-  // 注意：本闸门必须始终严于 confirmAllCandidates 的确认动作——
+  // 数量缺失不阻塞批量确认（补填数量时逐卡自动确认）；未确认的卡片要求
+  // 置信度达标，低置信度卡片必须先经人工确认——确认后视为已复核，不再
+  // 因历史置信度低而永久阻塞批量确认。人工增删的卡片置信度为 1，天然通过。
+  // 注意：本闸门必须始终严于 confirmAllCandidates 的确认动作——未确认的
   // 低置信度卡不允许被批量确认绕过。
-  && result.cards.every((card) => card.confidence >= .75)
+  && result.cards.every((card) => card.confirmed || card.confidence >= .75)
   && result.heroes.length === 4
   && result.heroes.every((hero) => hero.loadout.petId !== undefined
     && hero.loadout.equipmentIds.length === 2

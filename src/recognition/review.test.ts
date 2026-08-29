@@ -64,6 +64,11 @@ describe('批量确认闸门', () => {
     expect(canConfirmAllCandidates(candidate)).toBe(false)
   })
 
+  it('低置信度卡片经人工确认后不再阻塞一键确认', () => {
+    const candidate = result({ cards: [card({ confidence: .5, confirmed: true }), card({ key: 'card-2', confidence: .6, confirmed: true })] })
+    expect(canConfirmAllCandidates(candidate)).toBe(true)
+  })
+
   it('英雄列不完整时阻塞一键确认', () => {
     const candidate = result({ heroes: completeHeroes().slice(0, 3) })
     expect(canConfirmAllCandidates(candidate)).toBe(false)

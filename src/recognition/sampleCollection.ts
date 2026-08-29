@@ -39,8 +39,8 @@ export interface SampleMeta {
   preflight: PreflightSummary
   machineResult: ScreenshotRecognitionResult
   finalComposition: ArmyComposition
-  // 仅在“全部确认 + 容量校验通过”的回传路径上携带；
-  // 跳过确认或容量不通过时不产生样本。
+  // 仅在“一键确认全部 + 容量校验通过”的路径上携带；跳过确认或容量
+  // 不通过时样本照常回传，但不含配兵链接。
   armyLink?: string
 }
 

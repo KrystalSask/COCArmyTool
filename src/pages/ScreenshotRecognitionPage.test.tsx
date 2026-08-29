@@ -44,6 +44,8 @@ describe('截图识别页面', () => {
       createObjectURL: vi.fn(() => 'blob:test-image'),
       revokeObjectURL: vi.fn(),
     }))
+    // 页面任何进入编辑器的路径都可能触发样本回传；单测里拦截网络。
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, status: 200 } as Response))
   })
 
   it('上传完整截图并确认候选后进入统一编辑器', async () => {
@@ -80,14 +82,16 @@ describe('截图识别页面', () => {
     expect(firstCard?.className).toContain('active')
   })
 
-  it('兜底入口跳过确认直接进入编辑器且不回传', async () => {
+  it('兜底入口跳过确认直接进入编辑器并回传未完成样本', async () => {
     const onEdit = vi.fn()
+    const fetchMock = vi.mocked(fetch)
     const { container } = render(<ScreenshotRecognitionPage onEditInCalculator={onEdit} />)
     await uploadSample(container)
     fireEvent.click(screen.getByRole('button', { name: '生成真实识别候选' }))
     const skipButton = await screen.findByRole('button', { name: '跳过确认直接进入编辑器' })
     fireEvent.click(skipButton)
     expect(onEdit).toHaveBeenCalledTimes(1)
+    await vi.waitFor(() => expect(fetchMock).toHaveBeenCalled())
   })
 
   it('web 端默认共享：无共享开关，显示上传说明', async () => {
@@ -95,6 +99,6 @@ describe('截图识别页面', () => {
     await uploadSample(container)
     expect(screen.queryByText(/共享识别样本/)).toBeNull()
     expect(container.querySelector('input[type="checkbox"][aria-label], .sample-sharing')).toBeNull()
-    expect(screen.getByText(/机器候选、你的修正结果与配兵链接上传到作者服务器/)).toBeTruthy()
+    expect(screen.getByText(/进入配兵编辑器时会自动回传识别样本/)).toBeTruthy()
   })
 })
